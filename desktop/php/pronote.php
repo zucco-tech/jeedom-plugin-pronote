@@ -17,7 +17,22 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
 <style>
   /* Feuille de style de la page Pronote — variables du thème Jeedom, avec repli. */
   .pronote-page{--pn-line:rgba(128,140,155,.22);--pn-soft:rgba(128,140,155,.10);--pn-accent:var(--link-color,#1e8fd5)}
+  .pronote-page .pn-hero{display:flex;align-items:center;gap:18px;padding:18px 22px;margin:8px 0 22px;border-radius:var(--border-radius,6px);background:var(--panel-bg-color,rgba(128,140,155,.08));border:1px solid var(--pn-line);flex-wrap:wrap}
+  .pronote-page .pn-hero img{width:56px;height:56px;border-radius:14px;flex:none}
+  .pronote-page .pn-hero h1{margin:0;font-size:22px;font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pronote-page .pn-hero p{margin:3px 0 0;font-size:13px;opacity:.7;max-width:60ch}
+  .pronote-page .pn-hero .pn-chips{margin-left:auto}
+  .pronote-page .pn-section{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;opacity:.55;margin:0 0 10px;display:flex;align-items:center;gap:8px}
   .pronote-page .pn-cards{display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 18px}
+  .pronote-page .pn-empty{padding:22px 24px;margin:0 0 18px;border-radius:var(--border-radius,6px);border:1px dashed var(--pn-line);max-width:760px}
+  .pronote-page .pn-empty h3{margin:0 0 4px;font-size:16px;font-weight:500}
+  .pronote-page .pn-empty p{margin:0 0 16px;font-size:13px;opacity:.7}
+  .pronote-page .pn-empty ol{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .pronote-page .pn-empty li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+  .pronote-page .pn-empty li i{width:26px;height:26px;border-radius:50%;background:var(--pn-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-style:normal}
+  .pronote-page .pn-empty li b{display:block;font-size:13px;font-weight:500}
+  .pronote-page .pn-empty li small{font-size:11.5px;opacity:.65;line-height:1.35}
+  .pronote-page .pn-empty .btn-primary{font-weight:500}
   .pronote-page .pn-card{width:250px;padding:14px 16px;border-radius:var(--border-radius,6px);background:var(--panel-bg-color,rgba(128,140,155,.08));border:1px solid var(--pn-line);display:flex;gap:12px;align-items:center;transition:transform .12s,box-shadow .12s}
   .pronote-page .pn-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
   .pronote-page .pn-card.add{border-style:dashed;justify-content:center;color:var(--pn-accent);font-weight:500}
@@ -89,47 +104,69 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
 
 <div class="row row-overflow pronote-page">
   <div class="col-xs-12 eqLogicThumbnailDisplay">
-    <legend><i class="fas fa-graduation-cap"></i> {{Mes élèves}}</legend>
-    <div class="eqLogicThumbnailContainer pn-cards">
-      <div class="cursor eqLogicAction pn-card add" data-action="add">
-        <i class="fas fa-plus-circle"></i> {{Ajouter un élève}}
+    <div class="pn-hero">
+      <img src="plugins/pronote/plugin_info/pronote_icon.png" alt="" />
+      <div>
+        <h1>Pronote
+          <span class="pn-chip warn" title="{{Une seule installation testée : sauvegarder Jeedom, signaler les problèmes sur le dépôt.}}"><i class="fas fa-flask"></i> {{bêta}} <b><?php echo htmlspecialchars(json_decode(file_get_contents(__DIR__ . '/../../plugin_info/info.json'), true)['version'] ?? ''); ?></b></span>
+        </h1>
+        <p>{{Notes, devoirs, emploi du temps, absences et vie scolaire de vos enfants, remontés de Pronote dans Jeedom.}}</p>
       </div>
-      <?php
-      foreach ($eqLogics as $eqLogic) {
-          $opacity = ($eqLogic->getIsEnable()) ? '' : ' disableCard';
-          $name = $eqLogic->getName();
-          $sub = trim(implode(' · ', array_filter(array($eqLogic->getConfiguration('student_class', ''), $eqLogic->getConfiguration('establishment', '')))));
-          $err = (string)$eqLogic->getCache('lastError', '');
-          $token = $eqLogic->getConfiguration('credentials', '') !== '';
-          $last = (int)$eqLogic->getCache('lastSync', 0);
-          if (!$eqLogic->getIsEnable()) {
-              $dot = 'off'; $status = __('Désactivé', __FILE__);
-          } elseif (!$token) {
-              $dot = 'warn'; $status = __('À enrôler', __FILE__);
-          } elseif ($err !== '') {
-              $dot = 'bad'; $status = __('Erreur de synchronisation', __FILE__);
-          } else {
-              $dot = 'ok'; $status = $last > 0 ? __('Synchronisé à ', __FILE__) . date('H:i', $last) : __('Jamais synchronisé', __FILE__);
-          }
-          echo '<div class="eqLogicDisplayCard cursor pn-card' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
-          echo '<div class="pn-av" style="--h:' . pronote::hue($name) . '">' . htmlspecialchars(pronote::initials($name)) . '</div>';
-          echo '<div style="min-width:0">';
-          echo '<div class="pn-n name">' . htmlspecialchars($name) . '</div>';
-          echo '<div class="pn-c">' . ($sub !== '' ? htmlspecialchars($sub) : '{{Classe et établissement remontés à la première synchronisation}}') . '</div>';
-          echo '<div class="pn-s"><span class="pn-dot ' . $dot . '"></span>' . htmlspecialchars($status) . '</div>';
-          echo '</div></div>';
-      }
-      ?>
+      <div class="pn-chips">
+        <?php if ($dep['state'] === 'ok') { ?>
+          <span class="pn-chip ok"><i class="fas fa-check"></i> {{Dépendances OK}} <b>pronotepy <?php echo htmlspecialchars($pronotepyVersion); ?></b></span>
+        <?php } else { ?>
+          <span class="pn-chip bad"><i class="fas fa-exclamation-triangle"></i> {{Dépendances non installées}}</span>
+        <?php } ?>
+        <a class="btn btn-default btn-sm eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Configuration du plugin}}</a>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <a class="btn btn-default btn-sm eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Configuration du plugin}}</a>
-      <span class="pn-chip warn" title="{{Une seule installation testée : sauvegarder Jeedom, signaler les problèmes sur le dépôt.}}"><i class="fas fa-flask"></i> {{bêta}} <b><?php echo htmlspecialchars(json_decode(file_get_contents(__DIR__ . '/../../plugin_info/info.json'), true)['version'] ?? ''); ?></b></span>
-      <?php if ($dep['state'] === 'ok') { ?>
-        <span class="pn-chip ok"><i class="fas fa-check"></i> {{Dépendances OK}} <b>pronotepy <?php echo htmlspecialchars($pronotepyVersion); ?></b></span>
-      <?php } else { ?>
-        <span class="pn-chip bad"><i class="fas fa-exclamation-triangle"></i> {{Dépendances non installées}}</span>
-      <?php } ?>
-    </div>
+
+    <?php if (count($eqLogics) === 0) { ?>
+      <div class="pn-empty">
+        <h3>{{Premier élève en trois étapes}}</h3>
+        <p>{{Un élève = un équipement Jeedom, avec ses propres commandes et son widget.}}</p>
+        <ol>
+          <li><i>1</i><span><b>{{Ajouter un élève}}</b><small>{{Son prénom, le type de compte (Parent ou Élève) et l'adresse Pronote de l'établissement.}}</small></span></li>
+          <li><i>2</i><span><b>{{Enrôler un QR Code}}</b><small>{{Dans Pronote : Mon compte › Autoriser un accès mobile. Déposer l'image, saisir le code, c'est fait une fois pour toutes.}}</small></span></li>
+          <li><i>3</i><span><b>{{Synchroniser}}</b><small>{{Les commandes se remplissent ; le widget se pose ensuite sur le dashboard.}}</small></span></li>
+        </ol>
+        <a class="btn btn-primary eqLogicAction" data-action="add"><i class="fas fa-plus"></i> {{Ajouter un élève}}</a>
+      </div>
+    <?php } else { ?>
+      <div class="pn-section"><i class="fas fa-graduation-cap"></i> {{Mes élèves}}</div>
+      <div class="pn-cards">
+        <?php
+        foreach ($eqLogics as $eqLogic) {
+            $opacity = ($eqLogic->getIsEnable()) ? '' : ' disableCard';
+            $name = $eqLogic->getName();
+            $sub = trim(implode(' · ', array_filter(array($eqLogic->getConfiguration('student_class', ''), $eqLogic->getConfiguration('establishment', '')))));
+            $err = (string)$eqLogic->getCache('lastError', '');
+            $token = $eqLogic->getConfiguration('credentials', '') !== '';
+            $last = (int)$eqLogic->getCache('lastSync', 0);
+            if (!$eqLogic->getIsEnable()) {
+                $dot = 'off'; $status = __('Désactivé', __FILE__);
+            } elseif (!$token) {
+                $dot = 'warn'; $status = __('À enrôler', __FILE__);
+            } elseif ($err !== '') {
+                $dot = 'bad'; $status = __('Erreur de synchronisation', __FILE__);
+            } else {
+                $dot = 'ok'; $status = $last > 0 ? __('Synchronisé à ', __FILE__) . date('H:i', $last) : __('Jamais synchronisé', __FILE__);
+            }
+            echo '<div class="eqLogicDisplayCard cursor pn-card' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
+            echo '<div class="pn-av" style="--h:' . pronote::hue($name) . '">' . htmlspecialchars(pronote::initials($name)) . '</div>';
+            echo '<div style="min-width:0">';
+            echo '<div class="pn-n name">' . htmlspecialchars($name) . '</div>';
+            echo '<div class="pn-c">' . ($sub !== '' ? htmlspecialchars($sub) : '{{Classe et établissement remontés à la première synchronisation}}') . '</div>';
+            echo '<div class="pn-s"><span class="pn-dot ' . $dot . '"></span>' . htmlspecialchars($status) . '</div>';
+            echo '</div></div>';
+        }
+        ?>
+        <div class="cursor eqLogicAction pn-card add" data-action="add">
+          <i class="fas fa-plus-circle"></i> {{Ajouter un élève}}
+        </div>
+      </div>
+    <?php } ?>
   </div>
 
   <div class="col-xs-12 eqLogic" style="display: none;">

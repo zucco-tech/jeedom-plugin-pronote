@@ -63,6 +63,12 @@
   passés estompés, cours en cours mis en avant — calculé à l'affichage avec
   l'heure du navigateur. Heure seule dans le pied quand la synchro date du jour.
 
+### Page d'accueil du plugin
+- Bandeau avec l'icône, le titre, la pastille bêta, l'état des dépendances et
+  l'accès à la configuration. Sans élève, un panneau « Premier élève en trois
+  étapes » remplace la page vide. Les cartes d'élèves ne dépendent plus du
+  conteneur de vignettes de Jeedom, dont le style écrasait le leur.
+
 ### Devoirs dans l'agenda
 - Sur le dashboard, les devoirs ne sont plus une liste sous la grille : chaque
   devoir est rattaché au **jour où il est à rendre** (bloc « À rendre demain ·
