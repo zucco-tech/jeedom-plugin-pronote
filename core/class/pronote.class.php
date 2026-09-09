@@ -595,14 +595,22 @@ class pronote extends eqLogic {
                 if (!$a || !$b) {
                     continue;
                 }
-                $a = mktime(0, 0, 0, (int)date('n', $a), (int)date('j', $a), (int)date('Y', $a));
-                $b = mktime(23, 59, 59, (int)date('n', $b), (int)date('j', $b), (int)date('Y', $b));
                 $desc = (string)($r['description'] ?? '');
-                /* Marqueur d'un seul jour « Début des Vacances d'Été » : jusqu'à
-                   la veille de la rentrée, le 31 août qui suit. */
-                if ($b - $a < 86400 && (stripos($desc, 'Été') !== false || stripos($desc, 'ete') !== false)) {
-                    $year = (int)date('n', $a) >= 6 ? (int)date('Y', $a) : (int)date('Y', $a) - 1;
-                    $b = mktime(23, 59, 59, 8, 31, $year);
+                /* start_date = minuit du premier jour de vacances ; end_date =
+                   l'INSTANT de la reprise (minuit du jour de rentrée), qu'il
+                   faut exclure. Un marqueur d'un seul jour (« Pont de
+                   l'Ascension », « Début des Vacances d'Été ») a une fin égale
+                   au début : il couvre sa journée, ou tout l'été. */
+                $a = mktime(0, 0, 0, (int)date('n', $a), (int)date('j', $a), (int)date('Y', $a));
+                if ($b <= $a) {
+                    if (stripos($desc, 'Été') !== false || stripos($desc, 'ete') !== false) {
+                        $year = (int)date('n', $a) >= 6 ? (int)date('Y', $a) : (int)date('Y', $a) - 1;
+                        $b = mktime(23, 59, 59, 8, 31, $year);
+                    } else {
+                        $b = $a + 86399;
+                    }
+                } else {
+                    $b = $b - 1;   // 02/11 00:00 (reprise) -> 01/11 23:59:59
                 }
                 $sig = $a . '-' . $b;   // une ligne par académie : on dédoublonne
                 if (isset($seen[$sig])) {

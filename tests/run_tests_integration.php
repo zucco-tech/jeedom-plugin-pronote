@@ -393,6 +393,10 @@ t('période d\'un jour couvre la journée entière', $pont === null || ($pont[1]
 $bornesOk = true;
 foreach ($real as $r) { if (date('H:i:s', $r[0]) !== '00:00:00' || date('H:i:s', $r[1]) !== '23:59:59') { $bornesOk = false; } }
 t('toutes les bornes sont des journées locales entières (UTC converti)', $bornesOk && count($real) > 0);
+$tsst = null;
+foreach ($real as $r) { if (stripos($r[2], 'Toussaint') !== false && $r[0] > time()) { $tsst = $r; break; } }
+t('Toussaint : le jour de rentrée n\'est pas en vacances', $tsst !== null && date('N', $tsst[1] + 1) == 1 && date('N', $tsst[0]) == 6,
+   $tsst ? date('D d/m', $tsst[0]) . ' → ' . date('D d/m', $tsst[1]) . ' (rentrée ' . date('D d/m', $tsst[1] + 1) . ')' : 'absente');
 t('calendrier officiel zone B récupéré', is_array($real) && count($real) >= 3, count($real) . ' périodes');
 if (is_array($real) && count($real)) { $r = $real[0]; t('première période plausible', $r[1] > $r[0] && $r[2] !== '', $r[2] . ' ' . date('d/m', $r[0]) . '→' . date('d/m', $r[1])); }
 config::save('holiday_zone', $savedZone, 'pronote'); config::save('suspend_holidays', $savedSusp, 'pronote');
