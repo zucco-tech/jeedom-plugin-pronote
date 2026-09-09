@@ -587,23 +587,22 @@ class pronote extends eqLogic {
         if (is_array($json) && isset($json['results'])) {
             $seen = array();
             foreach ($json['results'] as $r) {
-                $a = strtotime(substr((string)($r['start_date'] ?? ''), 0, 19));
-                $b = strtotime(substr((string)($r['end_date'] ?? ''), 0, 19));
+                /* Les horodatages de l'API sont en UTC (« 2027-05-05T22:00:00+00:00 »
+                   = 06/05 à minuit, heure de Paris) : on les lit avec leur fuseau,
+                   puis on cale chaque borne sur la journée locale entière. */
+                $a = strtotime((string)($r['start_date'] ?? ''));
+                $b = strtotime((string)($r['end_date'] ?? ''));
                 if (!$a || !$b) {
                     continue;
                 }
+                $a = mktime(0, 0, 0, (int)date('n', $a), (int)date('j', $a), (int)date('Y', $a));
+                $b = mktime(23, 59, 59, (int)date('n', $b), (int)date('j', $b), (int)date('Y', $b));
                 $desc = (string)($r['description'] ?? '');
-                /* Le jeu de données porte des marqueurs d'un seul jour, à minuit :
-                   « Pont de l'Ascension 06/05 → 06/05 », « Début des Vacances
-                   d'Été 02/07 → 02/07 ». Tels quels, ils ne couvrent rien. */
-                if ($b <= $a) {
-                    if (stripos($desc, 'Été') !== false || stripos($desc, 'ete') !== false) {
-                        // Jusqu'à la veille de la rentrée : le 31 août qui suit.
-                        $year = (int)date('n', $a) >= 6 ? (int)date('Y', $a) : (int)date('Y', $a) - 1;
-                        $b = mktime(23, 59, 59, 8, 31, $year);
-                    } else {
-                        $b = strtotime('tomorrow', $a) - 1;   // fin de journée
-                    }
+                /* Marqueur d'un seul jour « Début des Vacances d'Été » : jusqu'à
+                   la veille de la rentrée, le 31 août qui suit. */
+                if ($b - $a < 86400 && (stripos($desc, 'Été') !== false || stripos($desc, 'ete') !== false)) {
+                    $year = (int)date('n', $a) >= 6 ? (int)date('Y', $a) : (int)date('Y', $a) - 1;
+                    $b = mktime(23, 59, 59, 8, 31, $year);
                 }
                 $sig = $a . '-' . $b;   // une ligne par académie : on dédoublonne
                 if (isset($seen[$sig])) {
