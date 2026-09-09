@@ -846,8 +846,12 @@ class pronote extends eqLogic {
         $devoirs = (string)$get('homework_html', '');
         if (trim(strip_tags($devoirs)) === '') {
             $replace['#devoirs#'] = '';
+            $replace['#devoirsSrc#'] = '';
         } else {
+            // Mobile : liste visible. Dashboard : source cachée, le widget
+            // rattache chaque devoir au jour où il est à rendre dans l'agenda.
             $replace['#devoirs#'] = '<div class="pw-label">À faire</div>' . $devoirs;
+            $replace['#devoirsSrc#'] = '<div class="pw-hwsrc" hidden>' . $devoirs . '</div>';
         }
 
         /* Cantine : affichée dès que le bloc remonte quelque chose. */

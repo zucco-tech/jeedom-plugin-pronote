@@ -62,6 +62,12 @@
   passés estompés, cours en cours mis en avant — calculé à l'affichage avec
   l'heure du navigateur. Heure seule dans le pied quand la synchro date du jour.
 
+### Devoirs dans l'agenda
+- Sur le dashboard, les devoirs ne sont plus une liste sous la grille : chaque
+  devoir est rattaché au **jour où il est à rendre** (bloc « À rendre demain ·
+  2 » sous le bandeau des jours), et un point orange marque ces jours dans le
+  bandeau. Le widget mobile garde la liste.
+
 ### Événements, vacances, matières, mobile, cantine
 - **Commandes binaires pour les scénarios** : « Nouvelle note (événement) »
   (à 1 quand le nombre de notes a augmenté depuis la synchro précédente, 0

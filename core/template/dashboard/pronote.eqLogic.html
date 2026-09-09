@@ -32,6 +32,14 @@
     .pronote-w .pw-days span.today small{color:var(--link-color);opacity:1}
     .pronote-w .pw-days span.on{background:rgba(128,128,128,.18);opacity:1}
     .pronote-w .pw-days span.on i{background:var(--link-color)}
+    .pronote-w .pw-days span.hw i{background:var(--al-warning-color)}
+    .pronote-w .pw-days span.on.hw i{background:var(--al-warning-color)}
+    .pronote-w .pw-hwday{margin:0 0 6px;padding:6px 8px;border-radius:var(--border-radius);background:color-mix(in srgb,var(--al-warning-color) 12%,transparent);border-left:3px solid var(--al-warning-color)}
+    .pronote-w .pw-hwday .t{font-size:.66em;letter-spacing:.07em;text-transform:uppercase;color:var(--al-warning-color);opacity:.9;margin-bottom:2px}
+    .pronote-w .pw-hwday div{font-size:.84em;line-height:1.25;padding:1px 0}
+    .pronote-w .pw-hwday b{font-weight:500}
+    .pronote-w .pw-hwday small{opacity:.7}
+    .pronote-w .pw-hwday .more{font-size:.74em;opacity:.6}
 
     /* grille horaire */
     .pronote-w .pw-tl{position:relative;height:280px;overflow:hidden;margin-bottom:2px}
@@ -75,7 +83,7 @@
     </div>
     #badges#
     #cours#
-    #devoirs#
+    #devoirsSrc#
     #cantine#
     <div class="pw-foot">Mis à jour #lastSync#</div>
   </div>
@@ -131,6 +139,24 @@
         H1 = Math.max(H1, Math.ceil(Math.max.apply(null, all.map(function (l) { return toMin(l.e || l.s) })) / 60) * 60)
       }
 
+      // Devoirs à rendre, rattachés à leur jour (data-date). Sans date (ancienne
+      // synchro), ils restent en liste sous l'agenda.
+      const hwSrc = root.querySelector('.pw-hwsrc')
+      const hwByDate = {}
+      let hwDated = 0
+      if (hwSrc) {
+        hwSrc.querySelectorAll('li').forEach(function (li) {
+          const d = li.dataset.date || ''
+          const item = { sub: (li.querySelector('b') || {}).textContent || '', txt: (li.querySelector('.t') || {}).textContent || '' }
+          if (d) { hwDated++; (hwByDate[d] = hwByDate[d] || []).push(item) }
+        })
+        if (!hwDated) {
+          hwSrc.hidden = false
+          hwSrc.insertAdjacentHTML('afterbegin', '<div class="pw-label">À faire</div>')
+        }
+      }
+      days.forEach(function (d) { d.hw = hwByDate[d.date] || [] })
+
       let todayIdx = days.findIndex(function (d) { return d.today })
       if (todayIdx < 0) todayIdx = 0
       let idx = todayIdx
@@ -143,9 +169,20 @@
 
       function drawStrip() {
         strip.innerHTML = days.map(function (d, k) {
-          return '<span class="' + (d.lessons.length ? 'has ' : '') + (d.today ? 'today ' : '') + (k === idx ? 'on' : '') + '" data-k="' + k + '">'
+          return '<span class="' + (d.lessons.length ? 'has ' : '') + (d.hw.length ? 'hw ' : '') + (d.today ? 'today ' : '') + (k === idx ? 'on' : '') + '" data-k="' + k + '" title="' + (d.hw.length ? d.hw.length + ' devoir(s) à rendre' : '') + '">'
                + '<small>' + (d.dow >= 0 ? J[d.dow] : '') + '</small><b>' + d.num + '</b><i></i></span>'
         }).join('')
+      }
+      function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;') }
+      function drawHomework() {
+        let box = root.querySelector('.pw-hwday')
+        const d = days[idx]
+        if (!d.hw.length) { if (box) box.remove(); return }
+        if (!box) { box = document.createElement('div'); box.className = 'pw-hwday'; strip.insertAdjacentElement('afterend', box) }
+        const shown = d.hw.slice(0, 3)
+        box.innerHTML = '<div class="t">À rendre ' + (d.rel || '') + ' · ' + d.hw.length + '</div>'
+          + shown.map(function (h) { return '<div><b>' + esc(h.sub) + '</b>' + (h.txt ? ' <small>— ' + esc(h.txt) + '</small>' : '') + '</div>' }).join('')
+          + (d.hw.length > 3 ? '<div class="more">+ ' + (d.hw.length - 3) + ' autre(s)</div>' : '')
       }
       function drawGrid() {
         const d = days[idx], px = tl.clientHeight / (H1 - H0), n = nowMin()
@@ -167,9 +204,9 @@
       // stopPropagation : le dashboard écoute aussi les clics sur les tuiles.
       strip.addEventListener('click', function (e) {
         const s = e.target.closest('span[data-k]'); if (!s) return
-        e.stopPropagation(); idx = parseInt(s.dataset.k, 10); drawStrip(); drawGrid()
+        e.stopPropagation(); idx = parseInt(s.dataset.k, 10); drawStrip(); drawHomework(); drawGrid()
       })
-      drawStrip(); drawGrid()
+      drawStrip(); drawHomework(); drawGrid()
       setInterval(drawGrid, 60000)
     })()
   </script>

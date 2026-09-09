@@ -376,8 +376,8 @@ def collect_homework(client, data, req, now):
         label = jour_relatif(date, today) if date else ""
         urgent = ' class="urgent"' if (date and (date - today).days <= 1) else ""
         desc = (getattr(h, "description", "") or "").replace("\n", " ").strip()
-        rows.append('<li{}><b>{}</b><span class="d">{}</span><span class="t">{}</span></li>'.format(
-            urgent, escape(subject), escape(label), escape(desc[:200])))
+        rows.append('<li{} data-date="{}"><b>{}</b><span class="d">{}</span><span class="t">{}</span></li>'.format(
+            urgent, date.isoformat() if date else "", escape(subject), escape(label), escape(desc[:200])))
     data["homework_html"] = '<ul class="pronote-hw">' + "".join(rows) + "</ul>" if rows else ""
 
 
@@ -607,7 +607,7 @@ def selftest_payload():
             "homework_count": 3, "homework_tomorrow": 1, "homework_tomorrow_pending": 1,
             "_grades_count": 21, "course_cancelled_tomorrow": 0,
             "menu_tomorrow": "Carottes râpées, lasagnes, fromage, compote",
-            "homework_html": '<ul class="pronote-hw"><li class="urgent"><b>Mathématiques</b><span class="d">demain</span>'
+            "homework_html": '<ul class="pronote-hw"><li class="urgent" data-date="2026-01-14"><b>Mathématiques</b><span class="d">demain</span>'
                              '<span class="t">Exercices 12 à 15 p. 84</span></li></ul>',
             "next_course": "Anglais LV1 — Salle A04 — Mme Rivet",
             "next_course_start": "09h30",
