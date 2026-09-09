@@ -2,8 +2,8 @@
     "id": "pronote",
     "name": "Pronote",
     "description": "Suivi scolaire Pronote : notes, moyennes, devoirs, emploi du temps, absences et vie scolaire.",
-    "licence": "GPL",
-    "author": "",
+    "licence": "GPL-3.0",
+    "author": "zucco-tech",
     "require": "4.4",
     "version": "1.0.0",
     "category": "organisation",
@@ -11,6 +11,6 @@
     "hasOwnDeamon": false,
     "maxDependancyInstallTime": 15,
     "eventjs": 0,
-    "documentation": "",
-    "changelog": ""
+    "documentation": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/docs/fr_FR/index.md",
+    "changelog": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/changelog.md"
 }

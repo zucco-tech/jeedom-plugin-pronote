@@ -13,7 +13,13 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
   suspension pendant les vacances scolaires (calendrier officiel).
 
 Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
-[changelog.md](changelog.md).
+[changelog.md](changelog.md) — licence : [GPL-3.0](LICENSE).
+
+Pronote n'a pas d'API publique : le plugin s'appuie sur
+[pronotepy](https://github.com/bain3/pronotepy), qui rejoue le protocole du
+client web. Une évolution de Pronote peut casser la connexion ; les problèmes
+se signalent dans les *issues* de ce dépôt avec le log `pronote` (jamais le
+log `pronote_raw` non expurgé d'une version antérieure).
 
 ## Installation
 
