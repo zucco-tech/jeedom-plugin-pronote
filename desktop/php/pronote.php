@@ -123,6 +123,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <a class="btn btn-default btn-sm eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Configuration du plugin}}</a>
+      <span class="pn-chip warn" title="{{Une seule installation testée : sauvegarder Jeedom, signaler les problèmes sur le dépôt.}}"><i class="fas fa-flask"></i> {{bêta}} <b><?php echo htmlspecialchars(json_decode(file_get_contents(__DIR__ . '/../../plugin_info/info.json'), true)['version'] ?? ''); ?></b></span>
       <?php if ($dep['state'] === 'ok') { ?>
         <span class="pn-chip ok"><i class="fas fa-check"></i> {{Dépendances OK}} <b>pronotepy <?php echo htmlspecialchars($pronotepyVersion); ?></b></span>
       <?php } else { ?>

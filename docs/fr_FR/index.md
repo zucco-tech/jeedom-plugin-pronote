@@ -1,5 +1,8 @@
 # Plugin Pronote
 
+> **Version bêta.** Une seule installation testée à ce jour. Sauvegarder Jeedom
+> avant d'installer ; signaler les problèmes dans les *issues* du dépôt.
+
 Remonte dans Jeedom les notes, devoirs, emploi du temps, absences et messages de
 vie scolaire d'un ou plusieurs enfants.
 

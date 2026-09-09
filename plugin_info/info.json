@@ -1,11 +1,11 @@
 {
     "id": "pronote",
     "name": "Pronote",
-    "description": "Suivi scolaire Pronote : notes, moyennes, devoirs, emploi du temps, absences et vie scolaire.",
+    "description": "BÊTA — Suivi scolaire Pronote : notes, moyennes, devoirs, emploi du temps, absences et vie scolaire.",
     "licence": "GPL-3.0",
     "author": "zucco-tech",
     "require": "4.4",
-    "version": "1.0.0",
+    "version": "1.0.0-beta.1",
     "category": "organisation",
     "hasDependency": true,
     "hasOwnDeamon": false,

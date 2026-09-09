@@ -1,7 +1,8 @@
 # Changelog
 
-## 1.0.0
-- Première version.
+## 1.0.0-beta.1
+- Première version, **bêta** : une seule installation testée (Jeedom 4.6.1,
+  un compte Parents, un établissement).
 - Connexion par QR Code (mode recommandé), ENT ou identifiants directs.
 - Jeton conservé et renouvelé automatiquement à chaque synchronisation ; le PIN
   2FA du compte, absent du jeton exporté, est stocké à part et renvoyé à chaque

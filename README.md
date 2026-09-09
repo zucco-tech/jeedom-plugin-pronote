@@ -1,4 +1,10 @@
-# Plugin Pronote pour Jeedom
+# Plugin Pronote pour Jeedom — bêta
+
+> **Statut : bêta.** Testé sur une seule installation (Jeedom 4.6.1, Debian 13,
+> PHP 8.4), un seul compte Parents, un seul établissement, en septembre 2026.
+> Attendez-vous à des surprises : faites une sauvegarde Jeedom avant
+> d'installer, et ne bâtissez pas dessus quelque chose de critique. Les retours
+> passent par les *issues*.
 
 Remonte dans Jeedom les notes, devoirs, emploi du temps, absences, vie scolaire
 et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).

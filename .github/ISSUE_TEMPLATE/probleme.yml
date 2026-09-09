@@ -5,6 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        Le plugin est en **bêta** : merci pour le retour, c'est exactement ce dont il a besoin.
+
         ### ⚠️ Avant de coller quoi que ce soit
         **Ne collez jamais** : le contenu d'un QR Code Pronote, un jeton, un mot de passe, un code PIN,
         ni le log `pronote_raw`. Ce sont des accès à votre compte — et à celui de votre enfant.
