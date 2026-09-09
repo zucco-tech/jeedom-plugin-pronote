@@ -84,6 +84,8 @@ t('selftest a écrit dans les commandes', is_object($c) && $c->execCmd() == 14.7
 list($j, $raw) = callAjax('sync', array('id' => $eq->getId()));
 t('sync sans jeton -> message sur le jeton', ajaxError($j, $raw, 'jeton'), ajaxMsg($j, $raw));
 
+list($j, $raw) = callAjax('enroll', array('id' => $eq->getId(), 'qr' => json_encode(array('jeton' => 'x')), 'pin' => ''));
+t('enroll sans code -> refusé avant tout appel', ajaxError($j, $raw, '4 chiffres'), ajaxMsg($j, $raw));
 list($j, $raw) = callAjax('enroll', array('id' => $eq->getId(), 'qr' => 'pas du json', 'pin' => '1234'));
 t('enroll, QR illisible -> message sur le QR Code', ajaxError($j, $raw, 'QR Code'), ajaxMsg($j, $raw));
 

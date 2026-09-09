@@ -143,6 +143,9 @@ def connect(req):
         if not qr:
             fail("auth", "Aucun jeton enregistré : importer un QR Code Pronote "
                          "(Mon compte > Autoriser un accès mobile)")
+        if not pin.isdigit() or len(pin) != 4:
+            fail("config", "Le code à 4 chiffres est manquant ou invalide : c'est celui choisi dans "
+                           "Pronote au moment de générer CE QR Code. Rien n'a été envoyé à Pronote.")
         if not isinstance(qr, dict) or "jeton" not in qr:
             fail("config", "Le contenu du QR Code ne ressemble pas à un QR Pronote "
                            "(objet JSON contenant 'jeton' attendu, reçu : {})".format(
@@ -157,7 +160,11 @@ def connect(req):
                                   "connexions en peu de temps. Chaque nouvelle tentative prolonge "
                                   "la suspension. Attendre au moins 30 minutes, puis enrôler UNE fois "
                                   "avec un QR Code neuf.")
-            if "Accès refusé" in message or "error from pronote: 3" in message.lower() or "acces refuse" in message.lower():
+            if message.strip("'\"") == "dataSec" or "dataSec" in message:
+                message = ("réponse inattendue de Pronote (pas de bloc de données). Presque toujours : code "
+                           "à 4 chiffres faux ou vide, ou QR Code périmé/déjà utilisé. Générer un nouveau QR Code, "
+                           "noter le code choisi, déposer la nouvelle image, saisir le code, enrôler une fois.")
+            elif "Accès refusé" in message or "error from pronote: 3" in message.lower() or "acces refuse" in message.lower():
                 message = ("Pronote a refusé ce QR Code (code 3, Accès refusé). Causes habituelles : le code "
                            "à 4 chiffres n'est pas celui choisi pour CE QR Code, ou le QR Code est expiré "
                            "(10 minutes) ou déjà utilisé. Générer un nouveau QR Code dans Pronote, noter le code "

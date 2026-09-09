@@ -50,6 +50,9 @@ try {
         if (!is_array($qr)) {
             throw new Exception(__('Contenu du QR Code illisible (JSON attendu)', __FILE__));
         }
+        if (!preg_match('/^\d{4}$/', trim((string)init('pin')))) {
+            throw new Exception(__('Le code à 4 chiffres est obligatoire : celui choisi dans Pronote pour ce QR Code. Rien n\'a été envoyé à Pronote.', __FILE__));
+        }
         $payload = $eqLogic->runFetch(array(
             'mode' => 'qr',
             'qr_json' => $qr,
