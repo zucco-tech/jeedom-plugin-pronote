@@ -69,7 +69,9 @@
   se déclenche sur le passage à 1.
 - **Vacances scolaires** : suspension optionnelle depuis le calendrier officiel
   (data.education.gouv.fr, zone A/B/C, cache 7 jours, une ligne par académie
-  dédoublonnée). Calendrier indisponible = pas de suspension. Bandeau dans le
+  dédoublonnée). Les marqueurs d'un seul jour du jeu de données sont
+  normalisés : « Début des Vacances d'Été » court jusqu'au 31 août, un pont
+  couvre sa journée entière. Calendrier indisponible = pas de suspension. Bandeau dans le
   widget et ligne sur la page Santé.
 - **Notes détaillées par matière** (option « moyenne par matière ») : moyenne
   de la classe (historisée) et dernière note avec barème et date, en plus de

@@ -592,12 +592,25 @@ class pronote extends eqLogic {
                 if (!$a || !$b) {
                     continue;
                 }
+                $desc = (string)($r['description'] ?? '');
+                /* Le jeu de données porte des marqueurs d'un seul jour, à minuit :
+                   « Pont de l'Ascension 06/05 → 06/05 », « Début des Vacances
+                   d'Été 02/07 → 02/07 ». Tels quels, ils ne couvrent rien. */
+                if ($b <= $a) {
+                    if (stripos($desc, 'Été') !== false || stripos($desc, 'ete') !== false) {
+                        // Jusqu'à la veille de la rentrée : le 31 août qui suit.
+                        $year = (int)date('n', $a) >= 6 ? (int)date('Y', $a) : (int)date('Y', $a) - 1;
+                        $b = mktime(23, 59, 59, 8, 31, $year);
+                    } else {
+                        $b = strtotime('tomorrow', $a) - 1;   // fin de journée
+                    }
+                }
                 $sig = $a . '-' . $b;   // une ligne par académie : on dédoublonne
                 if (isset($seen[$sig])) {
                     continue;
                 }
                 $seen[$sig] = true;
-                $ranges[] = array($a, $b, (string)($r['description'] ?? ''));
+                $ranges[] = array($a, $b, $desc);
             }
             usort($ranges, function ($x, $y) { return $x[0] - $y[0]; });
             cache::set($key, $ranges, 7 * 86400);

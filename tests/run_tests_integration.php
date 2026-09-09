@@ -384,6 +384,12 @@ config::save('suspend_holidays', 0, 'pronote');
 t('fonction désactivée -> jamais suspendu', !pronote::inHoliday(time() + 6 * 86400));
 cache::set('pronote::holidays::B', null, 1);
 $real = pronote::holidayRanges(true);
+$ete = null; $pont = null;
+foreach ($real as $r) { if (stripos($r[2], 'Été') !== false && date('Y', $r[0]) >= date('Y')) { $ete = $r; } if (stripos($r[2], 'Ascension') !== false) { $pont = $r; } }
+t('marqueur d\'été étendu jusqu\'au 31 août', $ete !== null && date('d/m', $ete[1]) === '31/08' && $ete[1] - $ete[0] > 30 * 86400,
+   $ete ? date('d/m/Y', $ete[0]) . ' → ' . date('d/m/Y', $ete[1]) : 'absent');
+t('période d\'un jour couvre la journée entière', $pont === null || ($pont[1] - $pont[0]) >= 86399,
+   $pont ? date('d/m H:i', $pont[0]) . ' → ' . date('d/m H:i', $pont[1]) : 'pas de pont dans le jeu');
 t('calendrier officiel zone B récupéré', is_array($real) && count($real) >= 3, count($real) . ' périodes');
 if (is_array($real) && count($real)) { $r = $real[0]; t('première période plausible', $r[1] > $r[0] && $r[2] !== '', $r[2] . ' ' . date('d/m', $r[0]) . '→' . date('d/m', $r[1])); }
 config::save('holiday_zone', $savedZone, 'pronote'); config::save('suspend_holidays', $savedSusp, 'pronote');
