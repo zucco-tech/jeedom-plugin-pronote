@@ -15,11 +15,21 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
 Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
 [changelog.md](changelog.md) — licence : [GPL-3.0](LICENSE).
 
-Pronote n'a pas d'API publique : le plugin s'appuie sur
-[pronotepy](https://github.com/bain3/pronotepy), qui rejoue le protocole du
-client web. Une évolution de Pronote peut casser la connexion ; les problèmes
-se signalent dans les *issues* de ce dépôt avec le log `pronote` (jamais le
-log `pronote_raw` non expurgé d'une version antérieure).
+## Signaler un problème
+
+Les *issues* de ce dépôt sont ouvertes à tous. Deux choses à savoir avant d'en
+ouvrir une :
+
+- **Ne collez jamais un jeton, le contenu d'un QR Code, un mot de passe, un
+  code PIN ni le log `pronote_raw`.** Ce sont des accès au compte Pronote — le
+  vôtre et celui de votre enfant. Le log `pronote` suffit, il ne contient aucun
+  secret.
+- **Pronote n'a pas d'API officielle.** Le plugin s'appuie sur
+  [pronotepy](https://github.com/bain3/pronotepy), qui rejoue le protocole du
+  client web. Une mise à jour de Pronote côté établissement peut casser la
+  connexion pour tout le monde en même temps : c'est désagréable, mais ça se
+  voit vite, et chez plusieurs personnes — regardez si une issue existe déjà
+  avant d'en ouvrir une.
 
 ## Installation
 

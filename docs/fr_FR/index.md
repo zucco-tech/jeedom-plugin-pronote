@@ -98,3 +98,13 @@ Plugins › Gestion des plugins › Pronote › **Mettre à jour** (source GitHu
 le hook de mise à jour crée les commandes manquantes et chiffre les secrets
 encore en clair. Si les dépendances passent en « non installées » après la mise
 à jour, relancer leur installation.
+
+## Signaler un problème
+
+Ouvrir une *issue* sur le dépôt GitHub, avec le modèle proposé. **Ne jamais y
+coller un jeton, le contenu d'un QR Code, un mot de passe, un code PIN ni le log
+`pronote_raw`** : ce sont des accès au compte Pronote. Le log `pronote` suffit.
+
+Pronote n'a pas d'API officielle et le plugin dépend de `pronotepy` : une mise à
+jour de Pronote peut casser la connexion pour tous les utilisateurs à la fois.
+Vérifier si une issue existe déjà avant d'en ouvrir une.

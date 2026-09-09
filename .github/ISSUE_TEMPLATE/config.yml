@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation du plugin
+    url: https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/docs/fr_FR/index.md
+    about: Installation, enrôlement, passage en production, tests.

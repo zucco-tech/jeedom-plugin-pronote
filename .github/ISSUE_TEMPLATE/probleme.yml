@@ -1,0 +1,57 @@
+name: Signaler un problème
+description: Le plugin ne fait pas ce qu'il devrait (synchronisation, enrôlement, affichage).
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### ⚠️ Avant de coller quoi que ce soit
+        **Ne collez jamais** : le contenu d'un QR Code Pronote, un jeton, un mot de passe, un code PIN,
+        ni le log `pronote_raw`. Ce sont des accès à votre compte — et à celui de votre enfant.
+        Le log `pronote` (Analyse › Logs) suffit : il ne contient pas de secret.
+
+        Pronote n'a pas d'API officielle : le plugin s'appuie sur [pronotepy](https://github.com/bain3/pronotepy).
+        Une mise à jour de Pronote côté établissement peut casser la connexion pour tout le monde en même temps —
+        si c'est votre cas, dites-le, quelqu'un d'autre l'a peut-être déjà vu.
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous faites, ce que vous attendiez, ce que vous obtenez (message exact si possible).
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode de connexion
+      options: ["QR Code", "ENT", "Identifiants directs"]
+    validations:
+      required: true
+  - type: dropdown
+    id: compte
+    attributes:
+      label: Type de compte
+      options: ["Parent", "Élève"]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Jeedom, plugin (page du plugin), pronotepy (affiché à côté de « Dépendances OK »).
+      placeholder: "Jeedom 4.6.1 · plugin 1.0.0 · pronotepy 2.15.7"
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Extrait du log `pronote`
+      description: Les dernières lignes autour de l'erreur. Pas le log `pronote_raw`.
+      render: text
+  - type: checkboxes
+    id: verif
+    attributes:
+      label: Vérification
+      options:
+        - label: Je n'ai collé ni jeton, ni QR Code, ni mot de passe, ni code PIN, ni log `pronote_raw`.
+          required: true
