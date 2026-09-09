@@ -57,3 +57,35 @@ Ajouter `KEEP_TEST_EQ=1` pour conserver l'équipement de test créé.
 - L'authentification réelle n'a pas de test automatique : elle demande un compte
   Pronote. En cas de souci, cocher « conserver les réponses brutes » dans la
   configuration du plugin et lire le log `pronote_raw`.
+
+## Passage sur un Jeedom de production
+
+1. **Sauvegarde** Jeedom d'abord (Réglages › Système › Sauvegardes).
+2. **Installer le plugin** : soit déposer le zip (Plugins › Gestion des plugins
+   › ➕ › « depuis un fichier »), soit cloner le dépôt dans
+   `plugins/pronote` puis `chown -R www-data:www-data plugins/pronote`.
+3. **Activer** le plugin, puis lancer l'installation des **dépendances** (venv
+   Python, une à deux minutes). Vérifier « Dépendances OK · pronotepy x.y.z »
+   sur la page du plugin.
+4. **Configuration du plugin** : plage horaire, délai entre appels, vacances
+   scolaires (zone), widget personnalisé — ces réglages ne se transportent pas.
+5. **Créer l'élève** (compte, URL Pronote, données à récupérer, fréquence) et
+   **enrôler un QR Code neuf**. Le jeton est chiffré avec la clé de l'instance :
+   celui du Jeedom de test ne peut pas être copié.
+6. **Synchroniser** une première fois depuis la fiche élève, puis vérifier la
+   page **Santé** de Jeedom (Analyse › Santé) : dépendances, vacances, état de
+   chaque élève.
+7. Placer le widget sur le dashboard (objet parent), et créer les scénarios sur
+   les commandes binaires (nouvelle note, cours annulé demain, devoir non
+   fait).
+
+Ne pas lancer `tests/run_tests_integration.php` en production : la suite est
+destructive (désactive le plugin, supprime des équipements, réinstalle les
+dépendances). `tests/run_tests.php` est sans danger.
+
+### Mise à jour ultérieure
+
+Remplacer le dossier (ou `git pull`), puis Plugins › Gestion des plugins ›
+Pronote › **Mettre à jour** (ou désactiver/réactiver) : le hook de mise à jour
+crée les commandes manquantes et chiffre les secrets encore en clair. Une mise à
+jour efface le venv : relancer les dépendances si Jeedom le demande.
