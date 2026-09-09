@@ -96,6 +96,12 @@
 - **Cantine** : menu du jour et de demain (nouvelle commande « Menu de
   demain »), affichés sur les widgets dès que Pronote les publie.
 
+### Adresse IP suspendue par Pronote
+- Index Éducation suspend temporairement une IP qui se connecte trop souvent
+  (« Your IP address is suspended »). Le plugin le reconnaît, l'explique en
+  clair, et **refuse de recontacter Pronote pendant 30 minutes** — cron et
+  bouton Enrôler compris — parce que chaque tentative prolonge la suspension.
+
 ### Fiabilité (préparation à la production)
 - **Secrets chiffrés au repos** (`utils::encrypt`) : jeton, mot de passe, PIN
   2FA. Migration transparente à la mise à jour ; le jeton n'est jamais renvoyé

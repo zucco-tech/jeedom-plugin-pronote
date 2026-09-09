@@ -129,6 +129,9 @@ def connect(req):
                 return client, pronotepy
             warn("token_login n'a pas ouvert de session, tentative de repli")
         except Exception as exc:
+            if "suspended" in str(exc).lower():
+                fail("suspended", "Pronote a suspendu temporairement cette adresse IP : trop de "
+                                  "connexions. Le plugin espace ses tentatives ; ne pas relancer à la main.")
             warn("token_login a échoué : {}".format(exc))
             print(traceback.format_exc(), file=sys.stderr)
 
@@ -149,6 +152,11 @@ def connect(req):
                 qr, pin, uuid, account_pin=account_pin, device_name=device_name)
         except Exception as exc:
             message = str(exc)
+            if "suspended" in message.lower():
+                fail("suspended", "Pronote a suspendu temporairement cette adresse IP : trop de "
+                                  "connexions en peu de temps. Chaque nouvelle tentative prolonge "
+                                  "la suspension. Attendre au moins 30 minutes, puis enrôler UNE fois "
+                                  "avec un QR Code neuf.")
             if "device identifier" in message:
                 message = ("Pronote exige l'enregistrement de l'appareil et a "
                            "refusé l'identifiant fourni ({}). Renseigner un « nom "

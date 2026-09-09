@@ -337,7 +337,7 @@ class pronote extends eqLogic {
         if (config::byKey('alert_on_auth_error', 'pronote', 1) != 1) {
             return;
         }
-        if (!isset($payload['code']) || !in_array($payload['code'], array('auth', 'deps', 'config'))) {
+        if (!isset($payload['code']) || !in_array($payload['code'], array('auth', 'deps', 'config', 'suspended'))) {
             return;
         }
         $key = md5($err);
@@ -353,6 +353,15 @@ class pronote extends eqLogic {
 
     /** Exécute le script Python et décode sa sortie JSON. */
     public function runFetch($extra = array()) {
+        /* Adresse IP suspendue par Pronote : toute tentative prolonge la
+           suspension. On refuse de contacter Pronote pendant 30 min, cron ou
+           clic compris — c'est le seul remède. */
+        $until = (int)$this->getCache('suspendedUntil', 0);
+        if ($until > time()) {
+            return array('ok' => false, 'code' => 'suspended',
+                         'error' => __('Adresse IP suspendue par Pronote : nouvelle tentative possible à ', __FILE__) . date('H:i', $until)
+                                  . __('. Ne pas insister, chaque tentative prolonge la suspension.', __FILE__));
+        }
         if (!file_exists(self::getPythonPath())) {
             return array('ok' => false, 'code' => 'deps', 'error' => __('Dépendances non installées (venv absent)', __FILE__));
         }
@@ -412,6 +421,9 @@ class pronote extends eqLogic {
         }
 
         $payload = json_decode((string)$raw, true);
+        if (is_array($payload) && isset($payload['code']) && $payload['code'] === 'suspended') {
+            $this->setCache('suspendedUntil', time() + 30 * 60);
+        }
         if (!is_array($payload)) {
             log::add('pronote', 'error', 'Sortie Python illisible : ' . substr((string)$raw, 0, 500));
             return array('ok' => false, 'code' => 'script', 'error' => __('Réponse illisible du script Python (voir le log)', __FILE__));

@@ -411,6 +411,16 @@ t('la copie lit le jeton chiffré', is_array($copyCreds) && ($copyCreds['passwor
 if (is_object($copy)) { $copy->remove(); }
 $eq->setSecret('credentials', ''); $eq->save(true);
 
+section('E sexies. Adresse IP suspendue par Pronote');
+$eq->setCache('suspendedUntil', time() + 600);
+$r = $eq->runFetch(array('mode' => 'qr', 'credentials' => null, 'qr_json' => array('jeton' => 'x')));
+t('pendant le gel : Pronote n\'est pas contacté', ($r['code'] ?? '') === 'suspended', substr((string)($r['error'] ?? ''), 0, 60));
+list($j, $raw) = callAjax('enroll', array('id' => $eq->getId(), 'qr' => json_encode(array('jeton' => 'x')), 'pin' => '1234'));
+t('le bouton Enrôler est bloqué aussi', ajaxError($j, $raw, 'suspendue'), ajaxMsg($j, $raw));
+$eq->setCache('suspendedUntil', 0);
+$r = $eq->runFetch(array('mode' => 'qr', 'credentials' => null, 'qr_json' => null));
+t('gel levé : tentative normale', ($r['code'] ?? '') === 'auth');
+
 section('F. Suppression en cascade');
 $eqId = $eq->getId();
 $cmdIds = array();
