@@ -17,9 +17,14 @@ Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
 
 ## Installation
 
-Jeedom 4.4+, PHP 8, Python 3. Déposer le dossier dans `plugins/pronote`,
-activer le plugin, lancer l'installation des dépendances (crée un venv dans
-`resources/venv`, obligatoire sur Debian 12+).
+Jeedom 4.4+, PHP 8, Python 3.
+
+Dans Jeedom : Réglages › Système › Configuration › *Mises à jour/Market* ›
+cocher **GitHub**, puis Plugins › Gestion des plugins › ➕ › onglet **GitHub** :
+`zucco-tech` / `jeedom-plugin-pronote` / branche `main` / identifiant `pronote`.
+Activer le plugin et lancer l'installation des dépendances (venv Python dans
+`resources/venv`, obligatoire sur Debian 12+). Les mises à jour se font ensuite
+par le bouton **Mettre à jour** du plugin.
 
 ## Tests
 

@@ -61,9 +61,18 @@ Ajouter `KEEP_TEST_EQ=1` pour conserver l'équipement de test créé.
 ## Passage sur un Jeedom de production
 
 1. **Sauvegarde** Jeedom d'abord (Réglages › Système › Sauvegardes).
-2. **Installer le plugin** : soit déposer le zip (Plugins › Gestion des plugins
-   › ➕ › « depuis un fichier »), soit cloner le dépôt dans
-   `plugins/pronote` puis `chown -R www-data:www-data plugins/pronote`.
+2. **Installer le plugin depuis GitHub**, directement dans Jeedom :
+   - une seule fois : Réglages › Système › Configuration › onglet
+     *Mises à jour/Market* › cocher **GitHub** (aucun token nécessaire, le
+     dépôt est public) ;
+   - Plugins › Gestion des plugins › ➕ › onglet **GitHub** :
+     utilisateur `zucco-tech`, dépôt `jeedom-plugin-pronote`, branche `main`,
+     identifiant du plugin `pronote` › **Installer**.
+
+   Le bouton **Mettre à jour** du plugin récupère ensuite la dernière version
+   du dépôt. (Alternatives : déposer le zip via « depuis un fichier », ou
+   cloner le dépôt dans `plugins/pronote` puis
+   `chown -R www-data:www-data plugins/pronote`.)
 3. **Activer** le plugin, puis lancer l'installation des **dépendances** (venv
    Python, une à deux minutes). Vérifier « Dépendances OK · pronotepy x.y.z »
    sur la page du plugin.
@@ -85,7 +94,7 @@ dépendances). `tests/run_tests.php` est sans danger.
 
 ### Mise à jour ultérieure
 
-Remplacer le dossier (ou `git pull`), puis Plugins › Gestion des plugins ›
-Pronote › **Mettre à jour** (ou désactiver/réactiver) : le hook de mise à jour
-crée les commandes manquantes et chiffre les secrets encore en clair. Une mise à
-jour efface le venv : relancer les dépendances si Jeedom le demande.
+Plugins › Gestion des plugins › Pronote › **Mettre à jour** (source GitHub) :
+le hook de mise à jour crée les commandes manquantes et chiffre les secrets
+encore en clair. Si les dépendances passent en « non installées » après la mise
+à jour, relancer leur installation.
