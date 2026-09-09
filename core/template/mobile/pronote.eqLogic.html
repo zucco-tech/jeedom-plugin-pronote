@@ -1,0 +1,60 @@
+<div class="eqLogic eqLogic-widget allowResize #custom_layout# #class# #category#"
+     data-eqType="#eqType#" data-eqLogic_id="#id#" data-eqLogic_uid="#uid#"
+     data-version="#version#" data-category="#category#" data-tags="#tags#"
+     style="width:#width#;height:#height#;#style#">
+  <div class="widget-name">
+    <span style="color:#background-color#" title="#alert_name#"><i class="#alert_icon#"></i></span>
+    <span class="cmd refresh pull-right cursor" data-cmd_id="#refresh_id#"><i class="fas fa-sync"></i></span>
+    <span class="reportModeVisible">#name_display# <span class="object_name">#object_name#</span></span>
+    <a href="#eqLink#" class="reportModeHidden">#name_display# <span class="object_name">#object_name#</span></a>
+  </div>
+  <style>
+    .pronote-m{text-align:left;padding:4px 12px 10px;color:var(--txt-color);line-height:1.3}
+    .pronote-m .pw-stats{display:flex;gap:1px;margin:8px 0;border-radius:var(--border-radius);overflow:hidden;background:rgba(128,128,128,.18)}
+    .pronote-m .pw-stat{flex:1;text-align:center;padding:10px 4px;background:var(--eq-bg-color,transparent)}
+    .pronote-m .pw-stat b{display:block;font-size:1.8em;font-weight:300;line-height:1.05}
+    .pronote-m .pw-stat span{display:block;font-size:.66em;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-top:3px}
+    .pronote-m .pw-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+    .pronote-m .pw-pill{display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:11px;font-size:.78em;font-weight:500}
+    .pronote-m .pw-hero{padding:10px 12px;margin:8px 0;border-left:3px solid var(--link-color);background:rgba(128,128,128,.12);border-radius:0 var(--border-radius) var(--border-radius) 0}
+    .pronote-m .pw-hero small{display:block;font-size:.68em;letter-spacing:.07em;text-transform:uppercase;opacity:.6}
+    .pronote-m .pw-hero b{display:block;font-size:1.05em;font-weight:500;margin-top:2px}
+    .pronote-m .pw-label{font-size:.68em;letter-spacing:.07em;text-transform:uppercase;opacity:.55;margin:10px 0 4px}
+    .pronote-m ul{list-style:none;margin:0;padding:0}
+    .pronote-m .pronote-hw li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 8px;padding:7px 0;border-top:1px solid rgba(128,128,128,.15);font-size:.92em}
+    .pronote-m .pronote-hw li:first-child{border-top:0}
+    .pronote-m .pronote-hw li b{font-weight:500}
+    .pronote-m .pronote-hw li .d{font-size:.78em;opacity:.6}
+    .pronote-m .pronote-hw li.urgent .d{color:var(--al-warning-color);opacity:1;font-weight:500}
+    .pronote-m .pronote-hw li .t{grid-column:1/-1;opacity:.72;font-size:.9em}
+    .pronote-m .pw-menu div{font-size:.88em;padding:4px 0;border-top:1px solid rgba(128,128,128,.15)}
+    .pronote-m .pw-menu div:first-child{border-top:0}
+    .pronote-m .pw-menu small{display:block;font-size:.72em;opacity:.55;text-transform:uppercase;letter-spacing:.05em}
+    .pronote-m .pw-foot{margin-top:10px;padding-top:7px;border-top:1px solid rgba(128,128,128,.2);font-size:.72em;opacity:.5}
+    .pronote-m .pw-alert{padding:8px 10px;margin:6px 0;border-radius:var(--border-radius);background:rgba(240,173,78,.15);color:var(--al-warning-color);font-size:.82em}
+    .pronote-m .pw-alert.pw-info{background:rgba(91,192,222,.14);color:var(--al-info-color)}
+    .pronote-m .pw-src,.pronote-m .pw-days,.pronote-m .pw-tl{display:none}
+  </style>
+  <div class="pronote-m">
+    #alerte#
+    <div class="pw-stats">
+      <div class="pw-stat"><b>#moyenne#</b><span>Moyenne</span></div>
+      <div class="pw-stat"><b>#devoirsNb#</b><span>Devoirs</span></div>
+      <div class="pw-stat"><b>#absences#</b><span>Absences</span></div>
+    </div>
+    #badges#
+    <div class="pw-hero"><small>#nextLabel#</small><b>#nextCourse#</b></div>
+    #devoirs#
+    #cantine#
+    <div class="pw-foot">Mis à jour #lastSync#</div>
+  </div>
+  <script>
+    if ('#refresh_id#' != '') {
+      document.querySelector('.eqLogic[data-eqLogic_uid="#uid#"] .refresh')?.addEventListener('click', function () {
+        jeedom.cmd.execute({ id: '#refresh_id#' })
+      })
+    } else {
+      document.querySelector('.eqLogic[data-eqLogic_uid="#uid#"] .refresh')?.remove()
+    }
+  </script>
+</div>

@@ -1,0 +1,11 @@
+# Version minimale : le support de la connexion par QR Code est requis.
+# Vérifier la version réellement installée avec :
+#   resources/venv/bin/pip show pronotepy
+pronotepy>=2.10
+requests>=2.28
+
+# Décodage de l'image du QR Code fourni par Pronote.
+# zxing-cpp est livré en wheel autonome : aucune bibliothèque système à installer
+# (contrairement à pyzbar, qui exige libzbar0).
+zxing-cpp>=2.2
+pillow>=10.0

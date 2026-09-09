@@ -1,0 +1,7 @@
+# Environnement Python créé par resources/install_apt.sh — jamais versionné
+resources/venv/
+__pycache__/
+*.pyc
+# Fichiers temporaires de Jeedom / de l'éditeur
+*.swp
+.DS_Store

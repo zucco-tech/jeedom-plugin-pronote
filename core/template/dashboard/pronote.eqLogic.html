@@ -1,0 +1,176 @@
+<div class="eqLogic eqLogic-widget allowResize #custom_layout# #class# #category#"
+     data-eqType="#eqType#" data-eqLogic_id="#id#" data-eqLogic_uid="#uid#"
+     data-version="#version#" data-category="#category#" data-tags="#tags#"
+     style="width:#width#;height:#height#;#style#">
+
+  <div class="widget-name">
+    <span style="color:#background-color#" title="#alert_name#"><i class="#alert_icon#"></i></span>
+    <span class="cmd refresh pull-right cursor" data-cmd_id="#refresh_id#"><i class="fas fa-sync"></i></span>
+    <span class="reportModeVisible">#name_display# <span class="object_name">#object_name#</span></span>
+    <a href="#eqLink#" class="reportModeHidden">#name_display# <span class="object_name">#object_name#</span></a>
+  </div>
+
+  <style>
+    .pronote-w{text-align:left;padding:2px 10px 8px;font-size:.92em;color:var(--txt-color);line-height:1.3}
+    .pronote-w .pw-stats{display:flex;gap:1px;margin:8px 0 8px;border-radius:var(--border-radius);overflow:hidden;background:rgba(128,128,128,.18)}
+    .pronote-w .pw-stat{flex:1;text-align:center;padding:8px 4px;background:var(--eq-bg-color,transparent)}
+    .pronote-w .pw-stat b{display:block;font-size:1.7em;font-weight:300;line-height:1.05;font-variant-numeric:tabular-nums}
+    .pronote-w .pw-stat span{display:block;font-size:.64em;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-top:3px}
+    .pronote-w .pw-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+    .pronote-w .pw-pill{display:inline-flex;align-items:center;height:19px;padding:0 8px;border-radius:10px;font-size:.72em;font-weight:500}
+    .pronote-w .pw-label{font-size:.66em;letter-spacing:.07em;text-transform:uppercase;opacity:.55;margin:9px 0 3px}
+    .pronote-w ul{list-style:none;margin:0;padding:0}
+
+    /* bandeau des jours */
+    .pronote-w .pw-days{display:flex;gap:3px;margin:6px 0 6px}
+    .pronote-w .pw-days span{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 0 3px;border-radius:var(--border-radius);opacity:.7;cursor:pointer;min-height:40px;line-height:1.1}
+    .pronote-w .pw-days span:hover{background:rgba(128,128,128,.12);opacity:1}
+    .pronote-w .pw-days span small{font-size:.62em;letter-spacing:.08em;text-transform:uppercase}
+    .pronote-w .pw-days span b{font-size:1.1em;font-weight:500}
+    .pronote-w .pw-days span i{width:4px;height:4px;border-radius:50%;background:transparent;margin-top:3px}
+    .pronote-w .pw-days span.has i{background:rgba(128,128,128,.6)}
+    .pronote-w .pw-days span.today small{color:var(--link-color);opacity:1}
+    .pronote-w .pw-days span.on{background:rgba(128,128,128,.18);opacity:1}
+    .pronote-w .pw-days span.on i{background:var(--link-color)}
+
+    /* grille horaire */
+    .pronote-w .pw-tl{position:relative;height:280px;overflow:hidden;margin-bottom:2px}
+    .pronote-w .pw-tl .hr{position:absolute;left:0;right:0;border-top:1px solid rgba(128,128,128,.18);font-size:.62em;opacity:.55;font-variant-numeric:tabular-nums}
+    .pronote-w .pw-tl .hr span{position:relative;top:-.75em;padding-right:4px;background:var(--eq-bg-color,transparent)}
+    .pronote-w .pw-tl .blk{position:absolute;left:30px;right:2px;border-left:3px solid var(--c,rgba(128,128,128,.6));background:color-mix(in srgb,var(--c,#888) 16%,transparent);border-radius:0 4px 4px 0;padding:2px 7px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;line-height:1.2}
+    .pronote-w .pw-tl .blk b{font-weight:500;font-size:.82em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pronote-w .pw-tl .blk small{font-size:.68em;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pronote-w .pw-tl .blk.past{opacity:.4}
+    .pronote-w .pw-tl .blk.now{box-shadow:inset 0 0 0 1px var(--c);background:color-mix(in srgb,var(--c,#888) 28%,transparent)}
+    .pronote-w .pw-tl .blk.now b{font-weight:600}
+    .pronote-w .pw-tl .blk.cancelled{border-left-color:var(--al-danger-color);background:color-mix(in srgb,var(--al-danger-color) 12%,transparent)}
+    .pronote-w .pw-tl .blk.cancelled b{text-decoration:line-through;opacity:.7}
+    .pronote-w .pw-tl .blk.cancelled small{color:var(--al-danger-color);opacity:.9}
+    .pronote-w .pw-tl .nowline{position:absolute;left:26px;right:0;border-top:2px solid var(--al-danger-color);z-index:2;pointer-events:none}
+    .pronote-w .pw-tl .nowline::before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--al-danger-color)}
+    .pronote-w .pw-tl .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.85em;opacity:.5}
+
+    /* devoirs */
+    .pronote-w .pronote-hw{max-height:120px;overflow-y:auto}
+    .pronote-w .pronote-hw li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 8px;padding:5px 0;border-top:1px solid rgba(128,128,128,.15);font-size:.88em}
+    .pronote-w .pronote-hw li:first-child{border-top:0}
+    .pronote-w .pronote-hw li b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pronote-w .pronote-hw li .d{font-size:.76em;opacity:.6;font-variant-numeric:tabular-nums}
+    .pronote-w .pronote-hw li.urgent .d{color:var(--al-warning-color);opacity:1;font-weight:500}
+    .pronote-w .pronote-hw li .t{grid-column:1/-1;opacity:.72;font-size:.9em}
+    .pronote-w .pw-foot{margin-top:8px;padding-top:6px;border-top:1px solid rgba(128,128,128,.2);font-size:.7em;opacity:.5}
+    .pronote-w .pw-alert{padding:7px 9px;margin:6px 0;border-radius:var(--border-radius);background:rgba(240,173,78,.15);color:var(--al-warning-color);font-size:.78em}
+    .pronote-w .pw-alert.pw-info{background:rgba(91,192,222,.14);color:var(--al-info-color)}
+    .pronote-w .pw-menu div{font-size:.86em;padding:3px 0;border-top:1px solid rgba(128,128,128,.15)}
+    .pronote-w .pw-menu div:first-child{border-top:0}
+    .pronote-w .pw-menu small{display:block;font-size:.72em;opacity:.55;text-transform:uppercase;letter-spacing:.05em}
+  </style>
+
+  <div class="pronote-w">
+    #alerte#
+    <div class="pw-stats">
+      <div class="pw-stat"><b>#moyenne#</b><span>Moyenne</span></div>
+      <div class="pw-stat"><b>#devoirsNb#</b><span>Devoirs</span></div>
+      <div class="pw-stat"><b>#absences#</b><span>Absences</span></div>
+    </div>
+    #badges#
+    #cours#
+    #devoirs#
+    #cantine#
+    <div class="pw-foot">Mis à jour #lastSync#</div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.querySelector('.eqLogic[data-eqLogic_uid="#uid#"]')
+      if (!root) return
+      if ('#refresh_id#' != '') {
+        root.querySelector('.refresh')?.addEventListener('click', function () {
+          jeedom.cmd.execute({ id: '#refresh_id#' })
+        })
+      } else {
+        root.querySelector('.refresh')?.remove()
+      }
+
+      /* ---- Agenda : bandeau des jours + grille horaire, construits depuis la
+              commande « 7 jours » (source cachée). Tout est calculé avec
+              l'heure du navigateur, et rafraîchi chaque minute. ---- */
+      const src = root.querySelector('.pw-src')
+      const strip = root.querySelector('.pw-days')
+      const tl = root.querySelector('.pw-tl')
+      if (!src || !strip || !tl) return
+
+      const J = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.']
+      const days = Array.from(src.querySelectorAll('.pronote-edt')).map(function (ul) {
+        const d = new Date((ul.dataset.date || '') + 'T12:00:00')
+        return {
+          date: ul.dataset.date, dow: isNaN(d) ? -1 : d.getDay(), num: isNaN(d) ? '' : d.getDate(),
+          rel: ul.dataset.rel || '', today: ul.dataset.today === '1',
+          lessons: Array.from(ul.querySelectorAll('li')).map(function (li) {
+            return {
+              s: parseInt(li.dataset.start || '0', 10), e: parseInt(li.dataset.end || '0', 10),
+              c: li.style.getPropertyValue('--c') || '', cancelled: li.classList.contains('cancelled'),
+              sub: (li.querySelector('b') || {}).textContent || '',
+              info: (li.querySelector('.i') || {}).textContent || '',
+              h: (li.querySelector('.h') || {}).textContent || ''
+            }
+          })
+        }
+      }).filter(function (d) { return d.dow === -1 || (d.dow !== 0 && d.dow !== 6) || d.lessons.length })
+      if (!days.length) { tl.innerHTML = '<div class="empty">Pas de cours cette semaine</div>'; return }
+
+      const toMin = function (hhmm) { return Math.floor(hhmm / 100) * 60 + (hhmm % 100) }
+      const fmt = function (hhmm) { return String(Math.floor(hhmm / 100)).padStart(2, '0') + 'h' + String(hhmm % 100).padStart(2, '0') }
+      const nowMin = function () { const n = new Date(); return n.getHours() * 60 + n.getMinutes() }
+
+      // Bornes de la grille : du premier au dernier cours de la semaine, arrondis à l'heure.
+      let H0 = 8 * 60, H1 = 17 * 60
+      const all = days.flatMap(function (d) { return d.lessons })
+      if (all.length) {
+        H0 = Math.min(H0, Math.floor(Math.min.apply(null, all.map(function (l) { return toMin(l.s) })) / 60) * 60)
+        H1 = Math.max(H1, Math.ceil(Math.max.apply(null, all.map(function (l) { return toMin(l.e || l.s) })) / 60) * 60)
+      }
+
+      let todayIdx = days.findIndex(function (d) { return d.today })
+      if (todayIdx < 0) todayIdx = 0
+      let idx = todayIdx
+      // Journée finie : on ouvre sur le prochain jour de cours.
+      const t = days[todayIdx]
+      if (t.today && t.lessons.length && t.lessons.every(function (l) { return toMin(l.e) <= nowMin() })) {
+        const n = days.findIndex(function (d, k) { return k > todayIdx && d.lessons.length })
+        if (n > 0) idx = n
+      }
+
+      function drawStrip() {
+        strip.innerHTML = days.map(function (d, k) {
+          return '<span class="' + (d.lessons.length ? 'has ' : '') + (d.today ? 'today ' : '') + (k === idx ? 'on' : '') + '" data-k="' + k + '">'
+               + '<small>' + (d.dow >= 0 ? J[d.dow] : '') + '</small><b>' + d.num + '</b><i></i></span>'
+        }).join('')
+      }
+      function drawGrid() {
+        const d = days[idx], px = tl.clientHeight / (H1 - H0), n = nowMin()
+        let html = ''
+        for (let h = H0; h <= H1; h += 60) {
+          html += '<div class="hr" style="top:' + ((h - H0) * px) + 'px"><span>' + (h / 60) + 'h</span></div>'
+        }
+        if (!d.lessons.length) html += '<div class="empty">Pas de cours ' + (d.rel || '') + '</div>'
+        d.lessons.forEach(function (l) {
+          const top = (toMin(l.s) - H0) * px, hgt = Math.max(14, (toMin(l.e || l.s) - toMin(l.s)) * px - 2)
+          let st = ''
+          if (d.today && !l.cancelled) { if (toMin(l.e) <= n) st = 'past'; else if (toMin(l.s) <= n) st = 'now' }
+          html += '<div class="blk ' + st + (l.cancelled ? ' cancelled' : '') + '" style="--c:' + l.c + ';top:' + top + 'px;height:' + hgt + 'px" title="' + l.sub.replace(/"/g, '&quot;') + ' — ' + l.info.replace(/"/g, '&quot;') + '">'
+                + '<b>' + l.sub + '</b><small>' + fmt(l.s) + (l.e ? '–' + fmt(l.e) : '') + (l.info ? ' · ' + l.info : '') + '</small></div>'
+        })
+        if (d.today && n >= H0 && n <= H1) html += '<div class="nowline" style="top:' + ((n - H0) * px) + 'px"></div>'
+        tl.innerHTML = html
+      }
+      // stopPropagation : le dashboard écoute aussi les clics sur les tuiles.
+      strip.addEventListener('click', function (e) {
+        const s = e.target.closest('span[data-k]'); if (!s) return
+        e.stopPropagation(); idx = parseInt(s.dataset.k, 10); drawStrip(); drawGrid()
+      })
+      drawStrip(); drawGrid()
+      setInterval(drawGrid, 60000)
+    })()
+  </script>
+</div>
