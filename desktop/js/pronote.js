@@ -127,23 +127,7 @@ document.addEventListener('click', function(event) {
   event.preventDefault()
   const id = pronoteEqLogicId()
 
-  if (target.id === 'bt_decodeQr') {
-    const input = document.getElementById('qr_image')
-    if (!input || !input.files || input.files.length === 0) {
-      pronoteAlert('{{Choisir une image du QR Code avant de décoder.}}', 'warning')
-      return
-    }
-    const body = pronoteForm('decode_qr')
-    body.append('image', input.files[0])
-    pronoteAjax(body, function(result) {
-      const field = document.getElementById('qr_json')
-      if (field) field.value = JSON.stringify(result)
-      pronoteSteps(3)
-      const pin = document.getElementById('qr_pin'); if (pin) pin.focus()
-      pronoteAlert('{{QR Code décodé. Saisir le code à 4 chiffres puis cliquer sur Enrôler.}}', 'success')
-    })
-    return
-  }
+  if (target.id === 'bt_decodeQr') { pronoteDecode(); return }
 
   if (!id) {
     pronoteAlert('{{Sauvegarder cet élève avant de lancer cette action.}}', 'warning')
@@ -155,6 +139,10 @@ document.addEventListener('click', function(event) {
     const pin = document.getElementById('qr_pin')
     if (!json || json.value.trim() === '') {
       pronoteAlert('{{Décoder une image de QR Code, ou coller son contenu.}}', 'warning')
+      return
+    }
+    if (!pin || !/^\d{4}$/.test(pin.value.trim())) {
+      pronoteAlert('{{Le code est celui choisi dans Pronote au moment de générer ce QR Code : 4 chiffres.}}', 'warning')
       return
     }
     pronoteAjax(pronoteForm('enroll', { id: id, qr: json.value, pin: pin ? pin.value : '' }), function() {
@@ -197,9 +185,30 @@ function pronoteApplyAccount() {
   document.querySelectorAll('.pronote-account').forEach(function(el) { el.style.display = 'none' })
   document.querySelectorAll('.pronote-account-' + account).forEach(function(el) { el.style.display = '' })
 }
+function pronoteDecode() {
+  const input = document.getElementById('qr_image')
+  const field = document.getElementById('qr_json')
+  if (!input || !input.files || input.files.length === 0) {
+    pronoteAlert('{{Choisir une image du QR Code avant de décoder.}}', 'warning')
+    return
+  }
+  // Un nouveau fichier annule l'ancien contenu : un QR périmé donne « Accès refusé ».
+  if (field) field.value = ''
+  pronoteSteps(2)
+  const body = pronoteForm('decode_qr')
+  body.append('image', input.files[0])
+  pronoteAjax(body, function(result) {
+    if (field) field.value = JSON.stringify(result)
+    pronoteSteps(3)
+    const pin = document.getElementById('qr_pin'); if (pin) { pin.value = ''; pin.focus() }
+    pronoteAlert('{{QR Code décodé. Saisir le code à 4 chiffres choisi dans Pronote pour CE QR Code, puis Enrôler.}}', 'success')
+  })
+}
+
 document.addEventListener('change', function(event) {
   if (event.target && event.target.id === 'sel_mode') pronoteApplyMode()
   if (event.target && event.target.id === 'sel_account') pronoteApplyAccount()
+  if (event.target && event.target.id === 'qr_image') pronoteDecode()
 })
 document.addEventListener('input', function(event) {
   const t = event.target

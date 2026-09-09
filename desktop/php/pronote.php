@@ -276,7 +276,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                         <span class="pn-num">2</span>
                         <div>
                           <b>{{Déposer l'image du QR Code}}</b>
-                          <p>{{Capture d'écran ou photo. L'image est effacée dès qu'elle est lue : elle vaut un accès au compte.}}</p>
+                          <p>{{Capture d'écran ou photo — décodée dès qu'elle est choisie. L'image est effacée dès qu'elle est lue : elle vaut un accès au compte.}}</p>
                           <div class="pn-row">
                             <input type="file" id="qr_image" accept="image/*" style="max-width:260px" />
                             <a class="btn btn-default btn-sm" id="bt_decodeQr"><i class="fas fa-camera"></i> {{Décoder}}</a>
@@ -290,7 +290,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                         <span class="pn-num">3</span>
                         <div>
                           <b>{{Code à 4 chiffres, puis enrôler}}</b>
-                          <p>{{Jeedom obtient un jeton qu'il renouvelle seul ensuite. Rien à refaire, sauf si le jeton est révoqué.}}</p>
+                          <p>{{Le code choisi dans Pronote pour ce QR Code précis — un nouveau QR Code = un nouveau code. Jeedom obtient un jeton qu'il renouvelle seul ensuite.}}</p>
                           <div class="pn-row">
                             <input type="text" class="form-control pn-pin" id="qr_pin" maxlength="4" placeholder="••••" />
                             <a class="btn btn-primary btn-sm" id="bt_enroll"><i class="fas fa-qrcode"></i> {{Enrôler}}</a>

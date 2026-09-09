@@ -157,7 +157,12 @@ def connect(req):
                                   "connexions en peu de temps. Chaque nouvelle tentative prolonge "
                                   "la suspension. Attendre au moins 30 minutes, puis enrôler UNE fois "
                                   "avec un QR Code neuf.")
-            if "device identifier" in message:
+            if "Accès refusé" in message or "error from pronote: 3" in message.lower() or "acces refuse" in message.lower():
+                message = ("Pronote a refusé ce QR Code (code 3, Accès refusé). Causes habituelles : le code "
+                           "à 4 chiffres n'est pas celui choisi pour CE QR Code, ou le QR Code est expiré "
+                           "(10 minutes) ou déjà utilisé. Générer un nouveau QR Code dans Pronote, noter le code "
+                           "choisi, déposer la nouvelle image, puis enrôler une fois.")
+            elif "device identifier" in message:
                 message = ("Pronote exige l'enregistrement de l'appareil et a "
                            "refusé l'identifiant fourni ({}). Renseigner un « nom "
                            "d'appareil » dans la configuration de l'élève.".format(device_name))
