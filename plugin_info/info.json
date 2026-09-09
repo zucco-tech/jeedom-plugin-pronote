@@ -6,7 +6,7 @@
     "author": "zucco-tech",
     "require": "4.4",
     "version": "1.0.0-beta.1",
-    "category": "organisation",
+    "category": "organization",
     "hasDependency": true,
     "hasOwnDeamon": false,
     "maxDependancyInstallTime": 15,
