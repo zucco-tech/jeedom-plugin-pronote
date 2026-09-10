@@ -199,6 +199,47 @@ class pronote extends eqLogic {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Plugins qui lisent les données d'un élève                           */
+    /* ------------------------------------------------------------------ */
+
+    /** Classes supplémentaires à interroger (tests). */
+    public static $readerProviders = array();
+
+    /**
+     * Noms des équipements d'autres plugins qui lisent cet élève. Pronote ne
+     * tient aucun registre : chaque plugin consommateur expose une méthode
+     * statique `utilisateursDe($eqLogicId)` qui rend la liste de ses
+     * équipements concernés (motif proposé par le plugin busscolaires).
+     * Aucune dépendance dure : un plugin absent ou sans cette méthode est ignoré.
+     */
+    public static function readersOf($_eqLogicId) {
+        $classes = self::$readerProviders;
+        foreach (plugin::listPlugin(true) as $plugin) {
+            $classes[] = $plugin->getId();
+        }
+        $out = array();
+        foreach (array_unique($classes) as $class) {
+            if ($class === 'pronote' || !class_exists($class) || !method_exists($class, 'utilisateursDe')) {
+                continue;
+            }
+            try {
+                $names = call_user_func(array($class, 'utilisateursDe'), $_eqLogicId);
+            } catch (Throwable $e) {
+                log::add('pronote', 'warning', 'utilisateursDe() de ' . $class . ' a échoué : ' . $e->getMessage());
+                continue;
+            }
+            if (is_array($names)) {
+                foreach ($names as $n) {
+                    if (trim((string)$n) !== '') {
+                        $out[] = trim((string)$n);
+                    }
+                }
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Santé (page Santé de Jeedom)                                        */
     /* ------------------------------------------------------------------ */
 
@@ -230,6 +271,15 @@ class pronote extends eqLogic {
                 'advice' => !$token ? __('Enrôler un QR Code', __FILE__) : ($err !== '' ? __('Voir le log pronote', __FILE__) : ''),
                 'state' => $ok,
             );
+            $lecteurs = self::readersOf($eqLogic->getId());
+            if (count($lecteurs)) {
+                $return[] = array(
+                    'test' => $eqLogic->getName() . __(' — utilisé par', __FILE__),
+                    'result' => implode(', ', $lecteurs),
+                    'advice' => '',
+                    'state' => true,
+                );
+            }
         }
         return $return;
     }

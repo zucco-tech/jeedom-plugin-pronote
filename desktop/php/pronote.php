@@ -31,7 +31,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
      clic, le visuel est dans .pn-rowbox. */
   .pronote-page .pn-list{display:flex;flex-direction:column;gap:8px;margin:0 0 22px}
   .pronote-page .pn-list .eqLogicDisplayCard.pn-row{text-align:left;padding:0;margin:0;width:100%;height:auto;display:block}
-  .pronote-page .pn-rowbox{display:grid;grid-template-columns:46px minmax(0,1fr) auto auto 28px;gap:14px;align-items:center;padding:12px 16px;border-radius:var(--border-radius,6px);background:var(--panel-bg-color,rgba(128,140,155,.08));border:1px solid var(--pn-line);transition:transform .12s,box-shadow .12s,border-color .12s}
+  .pronote-page .pn-rowbox{display:grid;grid-template-columns:46px minmax(0,1fr) repeat(auto-fit,auto) 28px;grid-auto-flow:column;gap:14px;align-items:center;padding:12px 16px;border-radius:var(--border-radius,6px);background:var(--panel-bg-color,rgba(128,140,155,.08));border:1px solid var(--pn-line);transition:transform .12s,box-shadow .12s,border-color .12s}
   .pronote-page .pn-row:hover .pn-rowbox{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.25);border-color:var(--pn-accent)}
   .pronote-page .pn-rowbox .pn-title{font-size:15px;font-weight:500;line-height:1.2}
   .pronote-page .pn-rowbox .pn-c{font-size:12px;opacity:.65;line-height:1.3;margin-top:2px}
@@ -186,6 +186,10 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
             echo '<div class="pn-c">' . ($sub !== '' ? htmlspecialchars($sub) : '{{Classe et établissement remontés à la première synchronisation}}') . '</div></div>';
             echo '<span class="pn-meta"><span class="pn-dot ' . $dot . '"></span>' . htmlspecialchars($status) . '</span>';
             echo '<span class="pn-meta"><i class="fas ' . ($token ? 'fa-key' : 'fa-qrcode') . '"></i> ' . ($token ? htmlspecialchars($rythme) : __('QR Code à enrôler', __FILE__)) . '</span>';
+            $lecteurs = pronote::readersOf($eqLogic->getId());
+            if (count($lecteurs)) {
+                echo '<span class="pn-meta" title="{{Autres plugins qui lisent les données de cet élève}}"><i class="fas fa-plug"></i> ' . htmlspecialchars(implode(', ', $lecteurs)) . '</span>';
+            }
             echo '<span class="pn-go"><i class="fas fa-chevron-right"></i></span>';
             echo '</div></div>';
         }

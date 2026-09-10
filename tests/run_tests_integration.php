@@ -433,6 +433,21 @@ t('réglage jamais défini -> défaut', (string)$eq->setting('device_name') === 
 config::save('frequency', $savedF, 'pronote'); config::save('homework_days', $savedH, 'pronote');
 $eq->setConfiguration('frequency', 30); $eq->save(true); $eq = eqLogic::byId($eq->getId());
 
+section('E septies. Plugins qui lisent un élève (utilisateursDe)');
+class __selftest_lecteur { public static function utilisateursDe($id) { return $id == $GLOBALS['__lecteur_id'] ? array('Car de test', ' ') : array(); } }
+class __selftest_casse { public static function utilisateursDe($id) { throw new Exception('boum'); } }
+$GLOBALS['__lecteur_id'] = $eq->getId();
+pronote::$readerProviders = array('__selftest_lecteur', '__selftest_casse', '__selftest_absent');
+$r = pronote::readersOf($eq->getId());
+t('lecteur déclaré -> listé', $r === array('Car de test'), json_encode($r));
+t('autre élève -> personne', pronote::readersOf($eq->getId() + 100000) === array());
+t('un lecteur qui plante n\'empêche pas les autres', true);
+$h = pronote::health(); $ligne = null;
+foreach ($h as $x) { if (strpos($x['test'], 'utilisé par') !== false) { $ligne = $x; } }
+t('ligne « utilisé par » dans Santé', $ligne !== null && $ligne['result'] === 'Car de test', $ligne ? $ligne['result'] : 'absente');
+pronote::$readerProviders = array();
+t('sans lecteur -> aucune ligne', count(pronote::readersOf($eq->getId())) === 0);
+
 section('E sexies. Adresse IP suspendue par Pronote');
 $eq->setCache('suspendedUntil', time() + 600);
 $r = $eq->runFetch(array('mode' => 'qr', 'credentials' => null, 'qr_json' => array('jeton' => 'x')));
