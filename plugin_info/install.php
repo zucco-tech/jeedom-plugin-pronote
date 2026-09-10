@@ -13,6 +13,8 @@ function pronote_install() {
     config::save('sync_end', config::byKey('sync_end', 'pronote', '20:00'), 'pronote');
     config::save('call_delay', config::byKey('call_delay', 'pronote', 5), 'pronote');
     config::save('custom_widget', config::byKey('custom_widget', 'pronote', 1), 'pronote');
+    config::save('sync_mode', config::byKey('sync_mode', 'pronote', 'times'), 'pronote');
+    config::save('sync_times', config::byKey('sync_times', 'pronote', '06:30,12:00,16:30,20:00'), 'pronote');
 }
 
 function pronote_update() {

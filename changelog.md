@@ -63,6 +63,16 @@
   passés estompés, cours en cours mis en avant — calculé à l'affichage avec
   l'heure du navigateur. Heure seule dans le pied quand la synchro date du jour.
 
+### Synchronisation à heures fixes (par défaut)
+- Nouveau rythme par défaut : **à heures fixes**, 06:30 · 12:00 · 16:30 · 20:00
+  — avant l'école, à midi, à la sortie, le soir. Quatre connexions par jour au
+  lieu d'une toutes les 30 minutes : moins de risque de suspension de l'IP par
+  Index Éducation, et rien n'est perdu (Pronote ne change pas entre deux
+  cours). Heures modifiables ; le rythme « à intervalle régulier » reste
+  disponible. Après un échec, le repli exponentiel reprend la main sans
+  attendre l'heure suivante.
+- Le rythme s'affiche en clair sur l'accueil et dans la fiche.
+
 ### Fiche élève réorganisée, réglages globaux
 - **Général** (objet parent, catégorie, état) en tête de la fiche, comme partout
   dans Jeedom ; puis Connexion Pronote ; à droite les données à récupérer et un

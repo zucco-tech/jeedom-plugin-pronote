@@ -7,18 +7,39 @@ if (!isConnect('admin')) {
   <fieldset>
     <legend><i class="fas fa-clock"></i> {{Synchronisation}}</legend>
     <div class="form-group">
-      <label class="col-sm-3 control-label">{{Fréquence}}</label>
+      <label class="col-sm-3 control-label">{{Rythme}}</label>
+      <div class="col-sm-3">
+        <select class="configKey form-control" data-l1key="sync_mode">
+          <option value="times" selected>{{À heures fixes}}</option>
+          <option value="interval">{{À intervalle régulier}}</option>
+        </select>
+      </div>
+      <div class="col-sm-5">
+        <span class="help-block">{{Pour tous les élèves : Pronote compte les connexions de votre adresse IP, pas celles de chaque enfant. Quatre à cinq fois par jour suffisent — avant l'école, à midi, à la sortie, le soir.}}</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Heures de synchronisation}}</label>
+      <div class="col-sm-3">
+        <input type="text" class="configKey form-control" data-l1key="sync_times" placeholder="06:30, 12:00, 16:30, 20:00" />
+      </div>
+      <div class="col-sm-5">
+        <span class="help-block">{{Heures séparées par des virgules, au quart d'heure près (le cron passe toutes les 15 minutes). Utilisées en rythme « à heures fixes ».}}</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Intervalle}}</label>
       <div class="col-sm-3">
         <select class="configKey form-control" data-l1key="frequency">
-          <option value="15">{{Toutes les 15 minutes}}</option>
-          <option value="30" selected>{{Toutes les 30 minutes}}</option>
+          <option value="30">{{Toutes les 30 minutes}}</option>
           <option value="60">{{Toutes les heures}}</option>
+          <option value="180">{{Toutes les 3 heures}}</option>
           <option value="720">{{2 fois par jour}}</option>
           <option value="0">{{Manuelle}}</option>
         </select>
       </div>
       <div class="col-sm-5">
-        <span class="help-block">{{Pour tous les élèves : Pronote compte les connexions de votre adresse IP, pas celles de chaque enfant. 30 minutes est un bon compromis.}}</span>
+        <span class="help-block">{{Utilisé en rythme « à intervalle régulier » seulement.}}</span>
       </div>
     </div>
 

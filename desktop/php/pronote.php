@@ -178,14 +178,14 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
             } else {
                 $dot = 'ok'; $status = $last > 0 ? __('Synchronisé ', __FILE__) . (date('Ymd', $last) === date('Ymd') ? __('à ', __FILE__) . date('H:i', $last) : __('le ', __FILE__) . date('d/m à H:i', $last)) : __('Jamais synchronisé', __FILE__);
             }
-            $freq = (int)$eqLogic->getConfiguration('frequency', 30);
+            $rythme = $eqLogic->rhythmLabel();
             echo '<div class="eqLogicDisplayCard cursor pn-row' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
             echo '<div class="pn-rowbox">';
             echo '<div class="pn-av" style="--h:' . pronote::hue($name) . '">' . htmlspecialchars(pronote::initials($name)) . '</div>';
             echo '<div style="min-width:0"><div class="pn-title">' . htmlspecialchars($name) . '</div>';
             echo '<div class="pn-c">' . ($sub !== '' ? htmlspecialchars($sub) : '{{Classe et établissement remontés à la première synchronisation}}') . '</div></div>';
             echo '<span class="pn-meta"><span class="pn-dot ' . $dot . '"></span>' . htmlspecialchars($status) . '</span>';
-            echo '<span class="pn-meta"><i class="fas ' . ($token ? 'fa-key' : 'fa-qrcode') . '"></i> ' . ($token ? ($freq > 0 ? __('toutes les ', __FILE__) . ($freq >= 60 ? ($freq / 60) . ' h' : $freq . ' min') : __('synchro manuelle', __FILE__)) : __('QR Code à enrôler', __FILE__)) . '</span>';
+            echo '<span class="pn-meta"><i class="fas ' . ($token ? 'fa-key' : 'fa-qrcode') . '"></i> ' . ($token ? htmlspecialchars($rythme) : __('QR Code à enrôler', __FILE__)) . '</span>';
             echo '<span class="pn-go"><i class="fas fa-chevron-right"></i></span>';
             echo '</div></div>';
         }
@@ -400,11 +400,8 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
               <div class="pn-sec">
                 <h4><i class="fas fa-sync"></i> {{Synchronisation}}</h4>
                 <div style="font-size:12.5px;opacity:.8">
-                  <?php
-                  $f = (int)config::byKey('frequency', 'pronote', 30);
-                  $rythme = $f <= 0 ? __('manuelle', __FILE__) : ($f >= 60 ? __('toutes les ', __FILE__) . ($f / 60) . ' h' : __('toutes les ', __FILE__) . $f . ' min');
-                  ?>
-                  {{Rythme}} : <b><?php echo $rythme; ?></b>, {{plage}} <b><?php echo htmlspecialchars(config::byKey('sync_start', 'pronote', '06:00')); ?> – <?php echo htmlspecialchars(config::byKey('sync_end', 'pronote', '20:00')); ?></b>,
+                  <?php $tmp = new pronote(); $rythme = $tmp->rhythmLabel(); ?>
+                  {{Rythme}} : <b><?php echo htmlspecialchars($rythme); ?></b>, {{plage}} <b><?php echo htmlspecialchars(config::byKey('sync_start', 'pronote', '06:00')); ?> – <?php echo htmlspecialchars(config::byKey('sync_end', 'pronote', '20:00')); ?></b>,
                   {{devoirs sur}} <b><?php echo (int)config::byKey('homework_days', 'pronote', 7); ?> {{jours}}</b><?php if (config::byKey('suspend_holidays', 'pronote', 0) == 1) { ?>, {{pause pendant les vacances}}<?php } ?>.
                   <div style="margin-top:8px"><a class="btn btn-default btn-xs eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Modifier dans la configuration du plugin}}</a>
                   <span class="help-block" style="display:inline;margin-left:8px">{{Ces réglages valent pour tous les élèves : c'est votre adresse IP que Pronote compte, pas chaque enfant.}}</span></div>

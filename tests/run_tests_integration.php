@@ -51,8 +51,8 @@ function ajaxMsg($j, $raw) {
 
 /* Indépendant de l'heure : plage horaire ouverte pendant toute la suite
    (la plage elle-même est testée dans run_tests.php). */
-$savedWin = array(config::byKey('sync_start', 'pronote', '06:00'), config::byKey('sync_end', 'pronote', '20:00'));
-config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote');
+$savedWin = array(config::byKey('sync_start', 'pronote', '06:00'), config::byKey('sync_end', 'pronote', '20:00'), config::byKey('sync_mode', 'pronote', 'times'));
+config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote'); config::save('sync_mode', 'interval', 'pronote');
 
 /* --- équipement de travail ------------------------------------------------ */
 foreach (array('__selftest_itest') as $lid) {
@@ -192,8 +192,8 @@ t('sync_start réécrit par le hook', config::byKey('sync_start', 'pronote', '')
    config::byKey('sync_start', 'pronote', '(vide)'));
 t('call_delay réécrit par le hook', config::byKey('call_delay', 'pronote', '') !== '',
    (string)config::byKey('call_delay', 'pronote', '(vide)'));
-/* le hook vient de réécrire la plage 06:00–20:00 : on la rouvre pour la suite */
-config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote');
+/* le hook vient de réécrire la plage 06:00–20:00 et le rythme : on les rouvre pour la suite */
+config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote'); config::save('sync_mode', 'interval', 'pronote');
 
 section('E ter. Décodage de l\'image du QR Code');
 /* Les images de test sont fabriquées ici : aucun vrai QR Code Pronote ne doit
@@ -479,7 +479,7 @@ if (getenv('DEPS') === '1') {
     echo "\n(section G ignorée — relancer avec DEPS=1 pour tester la réinstallation des dépendances)\n";
 }
 
-config::save('sync_start', $savedWin[0], 'pronote'); config::save('sync_end', $savedWin[1], 'pronote');
+config::save('sync_start', $savedWin[0], 'pronote'); config::save('sync_end', $savedWin[1], 'pronote'); config::save('sync_mode', $savedWin[2], 'pronote');
 
 echo "\n" . str_repeat('=', 60) . "\n";
 echo ($FAIL === 0 ? "TOUT PASSE" : $FAIL . " ECHEC(S)") . " sur " . $COUNT . " vérifications\n";

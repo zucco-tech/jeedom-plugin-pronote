@@ -33,8 +33,42 @@ class pronote extends eqLogic {
     /* ------------------------------------------------------------------ */
 
     const PLUGIN_SETTINGS = array(
-        'frequency' => 30, 'homework_days' => 7, 'per_subject' => 0, 'skip_done' => 0, 'device_name' => 'Jeedom',
+        'sync_mode' => 'times', 'sync_times' => '06:30,12:00,16:30,20:00', 'frequency' => 30,
+        'homework_days' => 7, 'per_subject' => 0, 'skip_done' => 0, 'device_name' => 'Jeedom',
     );
+
+    /** Heures fixes de synchronisation (minutes depuis minuit), triées, dédoublonnées. */
+    public function syncSlots() {
+        $out = array();
+        foreach (preg_split('/[\s,;]+/', (string)$this->setting('sync_times')) as $t) {
+            if (preg_match('/^(\d{1,2})[:h](\d{2})$/', trim($t), $m)) {
+                $min = (int)$m[1] * 60 + (int)$m[2];
+                if ($min >= 0 && $min < 1440) {
+                    $out[$min] = $min;
+                }
+            }
+        }
+        sort($out);
+        return array_values($out);
+    }
+
+    /** Libellé lisible du rythme, pour l'accueil et la fiche. */
+    public function rhythmLabel() {
+        if ($this->setting('sync_mode') === 'times') {
+            $slots = $this->syncSlots();
+            if (!count($slots)) {
+                return __('aucune heure définie', __FILE__);
+            }
+            return count($slots) . __(' fois par jour', __FILE__) . ' · ' . implode(', ', array_map(function ($m) {
+                return sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
+            }, $slots));
+        }
+        $f = (int)$this->setting('frequency');
+        if ($f <= 0) {
+            return __('manuelle', __FILE__);
+        }
+        return $f >= 60 ? __('toutes les ', __FILE__) . ($f / 60) . ' h' : __('toutes les ', __FILE__) . $f . ' min';
+    }
 
     /** Valeur d'un réglage : celle de l'élève si elle existe, sinon celle du plugin. */
     public function setting($_key) {
@@ -231,18 +265,41 @@ class pronote extends eqLogic {
      */
     public function isDue($_now = null) {
         $now = ($_now === null) ? time() : (int)$_now;
+        $last = (int)$this->getCache('lastSync', 0);
+        $fails = (int)$this->getCache('failCount', 0);
 
-        $freq = (int)$this->setting('frequency');
-        if ($freq <= 0) {
-            return false;
-        }
         if (!self::inSyncWindow($now)) {
             return false;
         }
         if (self::inHoliday($now)) {
             return false;
         }
-        $last = (int)$this->getCache('lastSync', 0);
+
+        /* Heures fixes : dû quand une heure programmée est passée aujourd'hui et
+           qu'aucune synchro n'a eu lieu depuis. Après un échec, on réessaie
+           selon le repli exponentiel, sans attendre l'heure suivante. */
+        if ($this->setting('sync_mode') === 'times') {
+            $slots = $this->syncSlots();
+            if (!count($slots)) {
+                return false;
+            }
+            if ($fails > 0) {
+                return (($now - $last) >= $this->nextDelay() - 30);
+            }
+            $midnight = mktime(0, 0, 0, (int)date('n', $now), (int)date('j', $now), (int)date('Y', $now));
+            $latest = null;
+            foreach ($slots as $m) {
+                if ($midnight + $m * 60 <= $now + 30) {
+                    $latest = $midnight + $m * 60;
+                }
+            }
+            return ($latest !== null && $last < $latest);
+        }
+
+        $freq = (int)$this->setting('frequency');
+        if ($freq <= 0) {
+            return false;
+        }
         return (($now - $last) >= $this->nextDelay() - 30);
     }
 

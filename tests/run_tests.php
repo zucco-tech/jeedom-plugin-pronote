@@ -125,6 +125,8 @@ section('7. Cron');
 $sStart = config::byKey('sync_start', 'pronote', '06:00'); $sEnd = config::byKey('sync_end', 'pronote', '20:00');
 $sSusp = config::byKey('suspend_holidays', 'pronote', 0);
 config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote'); config::save('suspend_holidays', 0, 'pronote');
+$sMode = config::byKey('sync_mode', 'pronote', ''); $sTimes = config::byKey('sync_times', 'pronote', '');
+config::save('sync_mode', 'interval', 'pronote');
 $eq->setCache('lastSync', 0);
 t('isDue() vrai sans synchro précédente', $eq->isDue());
 $eq->setCache('lastSync', time());
@@ -155,6 +157,26 @@ pronote::cron15();
 $elapsed = microtime(true) - $t0;
 t('cron15 espace deux élèves du délai configuré', $elapsed >= 3, round($elapsed, 2) . ' s');
 t('cron15 ne lève pas d\'exception', true);
+
+/* heures fixes */
+config::save('sync_mode', 'times', 'pronote');
+$eq->setConfiguration('frequency', null); $eq->save(true); $eq = eqLogic::byId($eq->getId());
+$at = function ($h, $m = 0) { return mktime($h, $m, 0, (int)date('n'), (int)date('j'), (int)date('Y')); };
+config::save('sync_times', '06:30, 12:00, 16:30, 20:00', 'pronote');
+t('4 créneaux lus', count($eq->syncSlots()) === 4, implode(',', $eq->syncSlots()));
+$eq->setCache('failCount', 0); $eq->setCache('lastSync', $at(5));
+t('05:45 : avant le premier créneau -> pas dû', !$eq->isDue($at(5, 45)));
+t('06:30 : créneau passé, pas synchronisé depuis -> dû', $eq->isDue($at(6, 30)));
+$eq->setCache('lastSync', $at(6, 31));
+t('07:00 : déjà synchronisé pour ce créneau -> pas dû', !$eq->isDue($at(7)));
+t('12:00 : créneau suivant -> dû', $eq->isDue($at(12)));
+$eq->setCache('lastSync', $at(12, 2));
+t('15:00 : rien entre 12:00 et 16:30 -> pas dû', !$eq->isDue($at(15)));
+$eq->setCache('failCount', 2);
+t('après échec : réessai selon le repli, sans attendre le créneau', $eq->isDue($at(12, 2) + $eq->nextDelay()));
+$eq->setCache('failCount', 0);
+t('libellé du rythme', strpos($eq->rhythmLabel(), '4') === 0 && strpos($eq->rhythmLabel(), '16:30') !== false, $eq->rhythmLabel());
+config::save('sync_mode', $sMode, 'pronote'); config::save('sync_times', $sTimes, 'pronote');
 config::save('sync_start', $sStart, 'pronote'); config::save('sync_end', $sEnd, 'pronote'); config::save('suspend_holidays', $sSusp, 'pronote');
 
 section('8. Widgets');
