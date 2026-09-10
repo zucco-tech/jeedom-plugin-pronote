@@ -63,6 +63,17 @@
   passés estompés, cours en cours mis en avant — calculé à l'affichage avec
   l'heure du navigateur. Heure seule dans le pied quand la synchro date du jour.
 
+### Page d'accueil du plugin (2)
+- Les élèves sont une **liste** : une ligne par élève (avatar, nom, classe ·
+  établissement, état de synchronisation, rythme, chevron), le bouton
+  « Ajouter un élève » dans l'en-tête de section. Jeedom impose
+  `background: transparent` et `border: none` (`!important`) à toute vignette
+  d'équipement : l'enveloppe cliquable reste nue, le visuel est dans une boîte
+  intérieure qu'il ne touche pas.
+- Pastille « Vacances » dans le bandeau quand la suspension est activée
+  (prochaine période, ou « synchro suspendue »).
+- Suite de tests : la section cron ne dépend plus de l'heure ni du calendrier.
+
 ### Page d'accueil du plugin
 - Bandeau avec l'icône, le titre, la pastille bêta, l'état des dépendances et
   l'accès à la configuration. Sans élève, un panneau « Premier élève en trois

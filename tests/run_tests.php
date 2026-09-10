@@ -120,6 +120,11 @@ t('log pronote_raw alimenté', (int)@filesize(log::getPathToLog('pronote_raw')) 
 config::save('debug_raw', 0, 'pronote');
 
 section('7. Cron');
+/* Indépendant de l'heure et du calendrier : plage horaire ouverte et vacances
+   coupées le temps de la section (la plage elle-même est testée en section 9). */
+$sStart = config::byKey('sync_start', 'pronote', '06:00'); $sEnd = config::byKey('sync_end', 'pronote', '20:00');
+$sSusp = config::byKey('suspend_holidays', 'pronote', 0);
+config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote'); config::save('suspend_holidays', 0, 'pronote');
 $eq->setCache('lastSync', 0);
 t('isDue() vrai sans synchro précédente', $eq->isDue());
 $eq->setCache('lastSync', time());
@@ -150,6 +155,7 @@ pronote::cron15();
 $elapsed = microtime(true) - $t0;
 t('cron15 espace deux élèves du délai configuré', $elapsed >= 3, round($elapsed, 2) . ' s');
 t('cron15 ne lève pas d\'exception', true);
+config::save('sync_start', $sStart, 'pronote'); config::save('sync_end', $sEnd, 'pronote'); config::save('suspend_holidays', $sSusp, 'pronote');
 
 section('8. Widgets');
 $eq = eqLogic::byId($eq->getId());
