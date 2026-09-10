@@ -136,8 +136,8 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
           <span class="pn-chip bad"><i class="fas fa-exclamation-triangle"></i> {{Dépendances non installées}}</span>
         <?php } ?>
         <?php if (config::byKey('suspend_holidays', 'pronote', 0) == 1) { $nh = pronote::nextHoliday(); ?>
-          <span class="pn-chip <?php echo pronote::inHoliday() ? 'warn' : ''; ?>" title="{{Synchronisation suspendue pendant les vacances scolaires}}"><i class="fas fa-umbrella-beach"></i>
-            <?php if (pronote::inHoliday()) { ?>{{Vacances — synchro suspendue}}<?php } elseif ($nh) { ?>{{Vacances}} <b><?php echo htmlspecialchars($nh[2]); ?> · <?php echo date('d/m', $nh[0]); ?></b><?php } else { ?>{{Vacances : calendrier indisponible}}<?php } ?>
+          <span class="pn-chip <?php echo pronote::inHoliday() ? 'warn' : ''; ?>" title="{{Pronote n'est pas interrogé pendant les vacances scolaires de votre zone : rien à lire, et moins de connexions.}}"><i class="fas fa-umbrella-beach"></i>
+            <?php if (pronote::inHoliday()) { ?>{{Pause vacances en cours}}<?php if ($nh) { ?> <b>{{jusqu'au}} <?php echo date('d/m', $nh[1]); ?></b><?php } ?><?php } elseif ($nh) { ?>{{Pause vacances}} <b>{{du}} <?php echo date('d/m', $nh[0]); ?> {{au}} <?php echo date('d/m', $nh[1]); ?></b><?php } else { ?>{{Pause vacances : calendrier indisponible}}<?php } ?>
           </span>
         <?php } ?>
         <a class="btn btn-default btn-sm eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Configuration du plugin}}</a>
@@ -233,6 +233,36 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
           <div class="col-lg-6">
             <form class="form-horizontal">
               <div class="pn-sec">
+                <h4><i class="fas fa-sliders-h"></i> {{Général}}</h4>
+                <div>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{Objet parent}}</label>
+                    <div class="col-sm-8">
+                      <select class="eqLogicAttr form-control" data-l1key="object_id">
+                        <option value="">{{Aucun}}</option>
+                        <?php foreach (jeeObject::all() as $object) { echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>'; } ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{Catégorie}}</label>
+                    <div class="col-sm-8">
+                      <?php foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
+                          echo '<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" /> ' . $value['name'] . '</label>';
+                      } ?>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{État}}</label>
+                    <div class="col-sm-8">
+                      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked /> {{Activer}}</label>
+                      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked /> {{Visible}}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pn-sec">
                 <h4><i class="fas fa-lock"></i> {{Connexion Pronote}}</h4>
                 <div>
                   <div class="form-group">
@@ -325,13 +355,6 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                     </div>
                   </div>
 
-                  <div class="form-group" style="margin-top:14px">
-                    <label class="col-sm-4 control-label">{{Nom de l'appareil}}</label>
-                    <div class="col-sm-8">
-                      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="device_name" maxlength="32" placeholder="Jeedom" />
-                      <span class="help-block">{{Sous ce nom, Pronote enregistre Jeedom parmi les appareils autorisés.}}</span>
-                    </div>
-                  </div>
                   <div class="form-group">
                     <label class="col-sm-4 control-label">{{PIN du compte (2FA)}}</label>
                     <div class="col-sm-8">
@@ -342,35 +365,6 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                 </div>
               </div>
 
-              <div class="pn-sec">
-                <h4><i class="fas fa-sliders-h"></i> {{Général}}</h4>
-                <div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{Objet parent}}</label>
-                    <div class="col-sm-8">
-                      <select class="eqLogicAttr form-control" data-l1key="object_id">
-                        <option value="">{{Aucun}}</option>
-                        <?php foreach (jeeObject::all() as $object) { echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>'; } ?>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{Catégorie}}</label>
-                    <div class="col-sm-8">
-                      <?php foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
-                          echo '<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" /> ' . $value['name'] . '</label>';
-                      } ?>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{État}}</label>
-                    <div class="col-sm-8">
-                      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked /> {{Activer}}</label>
-                      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked /> {{Visible}}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </form>
           </div>
 
@@ -405,37 +399,15 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
 
               <div class="pn-sec">
                 <h4><i class="fas fa-sync"></i> {{Synchronisation}}</h4>
-                <div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{Fréquence}}</label>
-                    <div class="col-sm-8">
-                      <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="frequency" style="max-width:220px">
-                        <option value="15">{{Toutes les 15 minutes}}</option>
-                        <option value="30">{{Toutes les 30 minutes}}</option>
-                        <option value="60">{{Toutes les heures}}</option>
-                        <option value="720">{{2 fois par jour}}</option>
-                        <option value="0">{{Manuelle}}</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{Horizon devoirs}}</label>
-                    <div class="col-sm-8">
-                      <div class="input-group" style="max-width:140px">
-                        <input type="number" min="1" max="30" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="homework_days" />
-                        <span class="input-group-addon">{{jours}}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{Options}}</label>
-                    <div class="col-sm-8 pn-toggles">
-                      <label><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="per_subject" />
-                        <span>{{Une commande de moyenne par matière}}<small>{{Créées à la première synchronisation, une par matière suivie.}}</small></span></label>
-                      <label><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="skip_done" />
-                        <span>{{Ignorer les devoirs cochés « fait » dans Pronote}}</span></label>
-                    </div>
-                  </div>
+                <div style="font-size:12.5px;opacity:.8">
+                  <?php
+                  $f = (int)config::byKey('frequency', 'pronote', 30);
+                  $rythme = $f <= 0 ? __('manuelle', __FILE__) : ($f >= 60 ? __('toutes les ', __FILE__) . ($f / 60) . ' h' : __('toutes les ', __FILE__) . $f . ' min');
+                  ?>
+                  {{Rythme}} : <b><?php echo $rythme; ?></b>, {{plage}} <b><?php echo htmlspecialchars(config::byKey('sync_start', 'pronote', '06:00')); ?> – <?php echo htmlspecialchars(config::byKey('sync_end', 'pronote', '20:00')); ?></b>,
+                  {{devoirs sur}} <b><?php echo (int)config::byKey('homework_days', 'pronote', 7); ?> {{jours}}</b><?php if (config::byKey('suspend_holidays', 'pronote', 0) == 1) { ?>, {{pause pendant les vacances}}<?php } ?>.
+                  <div style="margin-top:8px"><a class="btn btn-default btn-xs eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Modifier dans la configuration du plugin}}</a>
+                  <span class="help-block" style="display:inline;margin-left:8px">{{Ces réglages valent pour tous les élèves : c'est votre adresse IP que Pronote compte, pas chaque enfant.}}</span></div>
                 </div>
               </div>
             </form>

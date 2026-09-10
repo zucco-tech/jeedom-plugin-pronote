@@ -21,8 +21,23 @@ function pronote_update() {
        les équipements existants, et on chiffre les secrets encore en clair. */
     foreach (eqLogic::byType('pronote') as $eqLogic) {
         try {
+            /* Réglages devenus globaux (fréquence, horizon, options, appareil) :
+               la valeur du premier élève qui en a une devient celle du plugin,
+               puis la surcharge par élève est effacée pour qu'un seul endroit
+               fasse foi. */
+            $changed = false;
+            foreach (array_keys(pronote::PLUGIN_SETTINGS) as $key) {
+                $own = $eqLogic->getConfiguration($key, null);
+                if ($own !== null && $own !== '') {
+                    if (config::byKey($key, 'pronote', '') === '') {
+                        config::save($key, $own, 'pronote');
+                    }
+                    $eqLogic->setConfiguration($key, null);
+                    $changed = true;
+                }
+            }
             $eqLogic->syncCommands();
-            if ($eqLogic->encryptSecrets()) {
+            if ($eqLogic->encryptSecrets() || $changed) {
                 $eqLogic->save(true);
             }
         } catch (Exception $e) {

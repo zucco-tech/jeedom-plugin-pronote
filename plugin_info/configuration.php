@@ -6,6 +6,21 @@ if (!isConnect('admin')) {
 <form class="form-horizontal">
   <fieldset>
     <legend><i class="fas fa-clock"></i> {{Synchronisation}}</legend>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Fréquence}}</label>
+      <div class="col-sm-3">
+        <select class="configKey form-control" data-l1key="frequency">
+          <option value="15">{{Toutes les 15 minutes}}</option>
+          <option value="30" selected>{{Toutes les 30 minutes}}</option>
+          <option value="60">{{Toutes les heures}}</option>
+          <option value="720">{{2 fois par jour}}</option>
+          <option value="0">{{Manuelle}}</option>
+        </select>
+      </div>
+      <div class="col-sm-5">
+        <span class="help-block">{{Pour tous les élèves : Pronote compte les connexions de votre adresse IP, pas celles de chaque enfant. 30 minutes est un bon compromis.}}</span>
+      </div>
+    </div>
 
     <div class="form-group">
       <label class="col-sm-3 control-label">{{Plage horaire}}</label>
@@ -50,12 +65,40 @@ if (!isConnect('admin')) {
   </fieldset>
 
   <fieldset>
-    <legend><i class="fas fa-umbrella-beach"></i> {{Vacances scolaires}}</legend>
+    <legend><i class="fas fa-book"></i> {{Données}}</legend>
     <div class="form-group">
-      <label class="col-sm-3 control-label">{{Suspendre pendant les vacances}}</label>
-      <div class="col-sm-6">
+      <label class="col-sm-3 control-label">{{Horizon des devoirs}}</label>
+      <div class="col-sm-2">
+        <div class="input-group">
+          <input type="number" min="1" max="30" class="configKey form-control" data-l1key="homework_days" value="7" />
+          <span class="input-group-addon">{{jours}}</span>
+        </div>
+      </div>
+      <div class="col-sm-6"><span class="help-block">{{Devoirs remontés jusqu'à ce nombre de jours devant.}}</span></div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Options}}</label>
+      <div class="col-sm-8">
+        <label class="checkbox-inline" style="display:block;margin:0 0 6px"><input type="checkbox" class="configKey" data-l1key="per_subject" /> {{Une commande de moyenne par matière}} <span class="help-block" style="display:inline;margin-left:6px">{{(moyenne de l'élève, de la classe, dernière note — créées à la première synchronisation)}}</span></label>
+        <label class="checkbox-inline" style="display:block;margin:0"><input type="checkbox" class="configKey" data-l1key="skip_done" /> {{Ignorer les devoirs cochés « fait » dans Pronote}}</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Nom de l'appareil}}</label>
+      <div class="col-sm-3">
+        <input type="text" class="configKey form-control" data-l1key="device_name" placeholder="Jeedom" maxlength="32" />
+      </div>
+      <div class="col-sm-5"><span class="help-block">{{Sous ce nom, Pronote enregistre Jeedom parmi les appareils autorisés du compte.}}</span></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><i class="fas fa-umbrella-beach"></i> {{Pause pendant les vacances scolaires}}</legend>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Activer la pause}}</label>
+      <div class="col-sm-8">
         <input type="checkbox" class="configKey" data-l1key="suspend_holidays" />
-        <span class="help-block">{{Calendrier officiel (data.education.gouv.fr), rafraîchi chaque semaine. Si le calendrier est indisponible, la synchronisation n'est pas suspendue.}}</span>
+        <span class="help-block">{{À quoi ça sert : pendant les vacances, Pronote n'a rien de nouveau à donner, mais chaque synchronisation reste une connexion comptée sur votre adresse IP — et Index Éducation suspend les adresses trop bavardes. La pause arrête d'interroger Pronote du premier au dernier jour des vacances de votre zone, puis reprend seule à la rentrée. Calendrier officiel du ministère, rafraîchi chaque semaine ; s'il est indisponible, rien n'est suspendu.}}</span>
       </div>
     </div>
     <div class="form-group">

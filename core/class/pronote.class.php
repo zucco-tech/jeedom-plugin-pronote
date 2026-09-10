@@ -29,6 +29,25 @@ class pronote extends eqLogic {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Réglages : plugin par défaut, surcharge par élève si renseignée     */
+    /* ------------------------------------------------------------------ */
+
+    const PLUGIN_SETTINGS = array(
+        'frequency' => 30, 'homework_days' => 7, 'per_subject' => 0, 'skip_done' => 0, 'device_name' => 'Jeedom',
+    );
+
+    /** Valeur d'un réglage : celle de l'élève si elle existe, sinon celle du plugin. */
+    public function setting($_key) {
+        $default = isset(self::PLUGIN_SETTINGS[$_key]) ? self::PLUGIN_SETTINGS[$_key] : '';
+        $own = $this->getConfiguration($_key, null);
+        if ($own !== null && $own !== '') {
+            return $own;
+        }
+        $global = config::byKey($_key, 'pronote', null);
+        return ($global === null || $global === '') ? $default : $global;
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Secrets                                                             */
     /* ------------------------------------------------------------------ */
 
@@ -213,7 +232,7 @@ class pronote extends eqLogic {
     public function isDue($_now = null) {
         $now = ($_now === null) ? time() : (int)$_now;
 
-        $freq = (int)$this->getConfiguration('frequency', 30);
+        $freq = (int)$this->setting('frequency');
         if ($freq <= 0) {
             return false;
         }
@@ -233,7 +252,7 @@ class pronote extends eqLogic {
      * 30 min sur un jeton mort ne le ressuscite pas et expose au blocage.
      */
     public function nextDelay() {
-        $freq = max(1, (int)$this->getConfiguration('frequency', 30)) * 60;
+        $freq = max(1, (int)$this->setting('frequency')) * 60;
         $fails = (int)$this->getCache('failCount', 0);
         return min($freq * pow(2, min($fails, 5)), 8 * 3600);
     }
@@ -376,11 +395,10 @@ class pronote extends eqLogic {
             'account'     => $this->getConfiguration('account', 'eleve'),
             'account_pin' => $this->getSecret('account_pin', ''),
             'child_name'  => trim((string)$this->getConfiguration('child_name', '')),
-            'device_name' => ($this->getConfiguration('device_name', '') !== ''
-                              ? $this->getConfiguration('device_name') : 'Jeedom'),
-            'homework_days' => (int)$this->getConfiguration('homework_days', 7),
-            'per_subject' => ($this->getConfiguration('per_subject', 0) == 1),
-            'skip_done'   => ($this->getConfiguration('skip_done', 0) == 1),
+            'device_name' => (string)$this->setting('device_name'),
+            'homework_days' => (int)$this->setting('homework_days'),
+            'per_subject' => ($this->setting('per_subject') == 1),
+            'skip_done'   => ($this->setting('skip_done') == 1),
             'data'        => $this->enabledData(),
             'log_level'   => config::byKey('log_level', 'pronote', 'info'),
         ), $extra);
@@ -521,7 +539,7 @@ class pronote extends eqLogic {
         }
 
         // Détail par matière : commandes créées à la volée si l'option est active.
-        if ($this->getConfiguration('per_subject', 0) == 1 && isset($data['_subjects']) && is_array($data['_subjects'])) {
+        if ($this->setting('per_subject') == 1 && isset($data['_subjects']) && is_array($data['_subjects'])) {
             foreach ($data['_subjects'] as $subject) {
                 if (!isset($subject['logicalId'])) {
                     continue;
@@ -671,9 +689,6 @@ class pronote extends eqLogic {
         if (trim($this->getConfiguration('url', '')) === '' && $this->getConfiguration('mode', 'qr') !== 'qr') {
             throw new Exception(__('L\'URL de l\'espace élève est obligatoire', __FILE__));
         }
-        if ($this->getConfiguration('frequency', '') === '') {
-            $this->setConfiguration('frequency', 30);
-        }
         $this->encryptSecrets();
     }
 
@@ -758,7 +773,7 @@ class pronote extends eqLogic {
         }
 
         // Moyennes par matière : nettoyage si l'option est coupée.
-        if ($this->getConfiguration('per_subject', 0) != 1) {
+        if ($this->setting('per_subject') != 1) {
             foreach ($this->getCmd() as $cmd) {
                 foreach (array('avg_subject_', 'avg_class_subject_', 'last_grade_subject_') as $prefix) {
                     if (strpos($cmd->getLogicalId(), $prefix) === 0) {

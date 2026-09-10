@@ -49,6 +49,11 @@ function ajaxMsg($j, $raw) {
     return substr(trim(strip_tags($msg)), 0, 70);
 }
 
+/* Indépendant de l'heure : plage horaire ouverte pendant toute la suite
+   (la plage elle-même est testée dans run_tests.php). */
+$savedWin = array(config::byKey('sync_start', 'pronote', '06:00'), config::byKey('sync_end', 'pronote', '20:00'));
+config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote');
+
 /* --- équipement de travail ------------------------------------------------ */
 foreach (array('__selftest_itest') as $lid) {
     $old = eqLogic::byLogicalId($lid, 'pronote');
@@ -187,6 +192,8 @@ t('sync_start réécrit par le hook', config::byKey('sync_start', 'pronote', '')
    config::byKey('sync_start', 'pronote', '(vide)'));
 t('call_delay réécrit par le hook', config::byKey('call_delay', 'pronote', '') !== '',
    (string)config::byKey('call_delay', 'pronote', '(vide)'));
+/* le hook vient de réécrire la plage 06:00–20:00 : on la rouvre pour la suite */
+config::save('sync_start', '00:00', 'pronote'); config::save('sync_end', '23:59', 'pronote');
 
 section('E ter. Décodage de l\'image du QR Code');
 /* Les images de test sont fabriquées ici : aucun vrai QR Code Pronote ne doit
@@ -413,6 +420,19 @@ t('la copie lit le jeton chiffré', is_array($copyCreds) && ($copyCreds['passwor
 if (is_object($copy)) { $copy->remove(); }
 $eq->setSecret('credentials', ''); $eq->save(true);
 
+section('E quinquies bis. Réglages globaux avec surcharge par élève');
+$savedF = config::byKey('frequency', 'pronote', ''); $savedH = config::byKey('homework_days', 'pronote', '');
+config::save('frequency', 60, 'pronote'); config::save('homework_days', 5, 'pronote');
+$eq->setConfiguration('frequency', null); $eq->setConfiguration('homework_days', null); $eq->save(true);
+$eq = eqLogic::byId($eq->getId());
+t('fréquence lue depuis le plugin', (int)$eq->setting('frequency') === 60, (string)$eq->setting('frequency'));
+t('horizon lu depuis le plugin', (int)$eq->setting('homework_days') === 5);
+$eq->setConfiguration('frequency', 15); $eq->save(true); $eq = eqLogic::byId($eq->getId());
+t('surcharge par élève honorée', (int)$eq->setting('frequency') === 15);
+t('réglage jamais défini -> défaut', (string)$eq->setting('device_name') === 'Jeedom');
+config::save('frequency', $savedF, 'pronote'); config::save('homework_days', $savedH, 'pronote');
+$eq->setConfiguration('frequency', 30); $eq->save(true); $eq = eqLogic::byId($eq->getId());
+
 section('E sexies. Adresse IP suspendue par Pronote');
 $eq->setCache('suspendedUntil', time() + 600);
 $r = $eq->runFetch(array('mode' => 'qr', 'credentials' => null, 'qr_json' => array('jeton' => 'x')));
@@ -458,6 +478,8 @@ if (getenv('DEPS') === '1') {
 } else {
     echo "\n(section G ignorée — relancer avec DEPS=1 pour tester la réinstallation des dépendances)\n";
 }
+
+config::save('sync_start', $savedWin[0], 'pronote'); config::save('sync_end', $savedWin[1], 'pronote');
 
 echo "\n" . str_repeat('=', 60) . "\n";
 echo ($FAIL === 0 ? "TOUT PASSE" : $FAIL . " ECHEC(S)") . " sur " . $COUNT . " vérifications\n";

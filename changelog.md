@@ -63,6 +63,22 @@
   passés estompés, cours en cours mis en avant — calculé à l'affichage avec
   l'heure du navigateur. Heure seule dans le pied quand la synchro date du jour.
 
+### Fiche élève réorganisée, réglages globaux
+- **Général** (objet parent, catégorie, état) en tête de la fiche, comme partout
+  dans Jeedom ; puis Connexion Pronote ; à droite les données à récupérer et un
+  simple résumé de la synchronisation.
+- **Réglages passés au plugin** (Configuration du plugin) : fréquence, plage,
+  horizon des devoirs, « moyenne par matière », « ignorer les devoirs faits »,
+  nom de l'appareil — ils valent pour tous les élèves, c'est l'adresse IP que
+  Pronote compte. À la mise à jour, les valeurs déjà saisies sur un élève
+  deviennent celles du plugin ; une surcharge par élève reste possible (config
+  avancée) et gagne si elle est renseignée.
+- **Pause pendant les vacances scolaires** : renommée, et son utilité expliquée
+  dans la configuration (rien à lire, moins de connexions comptées sur l'IP) ;
+  pastille « Pause vacances du 17/10 au 01/11 » sur l'accueil.
+- Suite d'intégration indépendante de l'heure (plage rouverte après le test du
+  hook d'installation, qui la réécrit).
+
 ### Page d'accueil du plugin (2)
 - Les élèves sont une **liste** : une ligne par élève (avatar, nom, classe ·
   établissement, état de synchronisation, rythme, chevron), le bouton
