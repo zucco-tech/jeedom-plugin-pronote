@@ -16,6 +16,14 @@
 - Bouton « Jeu d'essai » : remplit les commandes sans contacter Pronote, pour
   valider l'installation indépendamment de l'authentification.
 
+### Préparation au Market Jeedom
+- `info.json` : liens `documentation_beta` / `changelog_beta` (branche `beta`),
+  `issue`, `language`, `compatibility`, Debian minimum.
+- Branche `beta`, celle que le Market lira ; `main` reste la branche de travail.
+- Tutoriel de publication pas à pas : `docs/dev/publier-sur-le-market.md`
+  (compte développeur, présentation sur Community, jeton GitHub, fiche Market,
+  test en privé, passage en stable).
+
 ### Limites connues
 - Le rang dans la classe n'est pas remonté : pronotepy ne l'expose pas.
 

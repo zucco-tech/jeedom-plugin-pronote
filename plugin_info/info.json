@@ -12,5 +12,19 @@
     "maxDependancyInstallTime": 15,
     "eventjs": 0,
     "documentation": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/docs/fr_FR/index.md",
-    "changelog": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/changelog.md"
+    "changelog": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/changelog.md",
+    "documentation_beta": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/beta/docs/fr_FR/index.md",
+    "changelog_beta": "https://github.com/zucco-tech/jeedom-plugin-pronote/blob/beta/changelog.md",
+    "issue": "https://github.com/zucco-tech/jeedom-plugin-pronote/issues",
+    "language": [
+        "fr_FR"
+    ],
+    "compatibility": [
+        "v4",
+        "diy",
+        "docker"
+    ],
+    "os": {
+        "min": "11"
+    }
 }
