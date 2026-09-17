@@ -41,18 +41,32 @@ d'autres utilisateurs l'auront fait tourner, **Stable**.
 
 ## Étape 1 — Devenir développeur (une seule fois)
 
-1. Sur [market.jeedom.com](https://market.jeedom.com), connecte-toi avec ton
+**Tant que cette étape n'est pas validée, le bouton « Ajouter » du Market
+n'existe pas et le Salon des développeurs n'accepte pas tes messages** : c'est
+normal de « ne pas trouver où poster ».
+
+1. Connecte-toi sur [market.jeedom.com](https://market.jeedom.com) avec ton
    compte Market (celui déjà lié à ton Jeedom).
-2. **Mon profil › Pour les développeurs** : demande le statut développeur.
-   Si ton pseudo Community diffère de ton pseudo Market, renseigne-le là
-   (« nom d'auteur ») : c'est lui qui apparaîtra sur la fiche.
-3. Attends la validation par l'équipe Jeedom (quelques jours). Elle donne
-   accès au **Salon des développeurs** sur
-   [community.jeedom.com](https://community.jeedom.com) et au droit de créer un
-   plugin sur le Market (`allowPublishMarket` dans le profil).
-4. Si, une fois validé, le bouton « Ajouter » du Market reste absent : poste
-   dans le Salon des développeurs pour demander l'activation du droit de
-   publication — il est parfois accordé à la demande.
+2. Ouvre le formulaire d'inscription développeur :
+   <https://market.jeedom.com/index.php?v=d&p=becomeDeveloper>
+   (c'est aussi le lien « s'inscrire en tant que développeur » en haut de
+   [doc.jeedom.com › dev](https://doc.jeedom.com/fr_FR/dev/)). Remplis-le,
+   en indiquant ton **pseudo Community** : l'équipe en a besoin pour ouvrir
+   l'accès au forum.
+3. Attends la validation par l'équipe Jeedom. D'après les retours sur
+   Community, compter **une à deux semaines**. Tu reçois un courriel disant que
+   tes droits Market sont à jour.
+4. Après validation :
+   - sur le Market, **Mon profil › Pour les développeurs** permet de renseigner
+     ton nom d'auteur (pseudo Community) ;
+   - sur [community.jeedom.com](https://community.jeedom.com), le
+     [Salon des Développeurs](https://community.jeedom.com/c/developpeur-developpeurs/5)
+     devient accessible en écriture (un titre/« flair » développeur apparaît
+     dans tes préférences).
+5. Sans nouvelles après deux semaines : écrire à `partenaire@jeedom.com`, ou
+   poster dans [Market Jeedom](https://community.jeedom.com/c/market-jeedom/72)
+   (catégorie ouverte à tous) en rappelant ton pseudo Market. C'est ce qui a
+   débloqué les autres développeurs.
 
 ## Étape 2 — Présenter le plugin sur Community
 
