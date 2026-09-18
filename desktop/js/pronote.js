@@ -49,7 +49,31 @@ function pronoteRefreshToken(_eqLogic) {
   const cache = (_eqLogic && _eqLogic.cache) || {}
   const name = (_eqLogic && _eqLogic.name) || ''
   const av = document.getElementById('pn_avatar')
-  if (av) { av.textContent = pronoteInitials(name); av.style.setProperty('--h', pronoteHue(name)) }
+  const eqId = parseInt((_eqLogic && _eqLogic.id) || 0, 10)
+  if (av) {
+    av.style.setProperty('--h', pronoteHue(name))
+    if (eqId && Array.isArray(window.pronotePhotoIds) && pronotePhotoIds.indexOf(eqId) !== -1) {
+      av.innerHTML = '<img src="plugins/pronote/core/ajax/pronote.ajax.php?action=photo&id=' + eqId + '&t=' + Date.now() + '" alt="" />'
+    } else {
+      av.textContent = pronoteInitials(name)
+    }
+  }
+  const ical = document.getElementById('pn_ical_url')
+  if (ical) {
+    const url = (eqId && window.pronoteIcalBase) ? pronoteIcalBase + eqId : ''
+    ical.textContent = url || '{{Disponible après la première sauvegarde}}'
+    const open = document.getElementById('bt_icalOpen')
+    if (open) { open.href = url || '#'; open.style.display = url ? '' : 'none' }
+    const copy = document.getElementById('bt_icalCopy')
+    if (copy) {
+      copy.style.display = url ? '' : 'none'
+      copy.onclick = function () {
+        const done = function () { copy.innerHTML = '<i class="fas fa-check"></i> {{Copié}}'; setTimeout(function () { copy.innerHTML = '<i class="fas fa-copy"></i> {{Copier}}' }, 1500) }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done)
+        else { const r = document.createRange(); r.selectNodeContents(ical); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); try { document.execCommand('copy'); done() } catch (e) {} }
+      }
+    }
+  }
   const sub = document.getElementById('pn_sub')
   if (sub) {
     const parts = [conf.student_class, conf.establishment].filter(Boolean)
@@ -214,7 +238,7 @@ document.addEventListener('input', function(event) {
   const t = event.target
   if (t && t.classList.contains('pn-name-input')) {
     const av = document.getElementById('pn_avatar')
-    if (av) { av.textContent = pronoteInitials(t.value); av.style.setProperty('--h', pronoteHue(t.value)) }
+    if (av && !av.querySelector('img')) { av.textContent = pronoteInitials(t.value); av.style.setProperty('--h', pronoteHue(t.value)) }
   }
 })
 

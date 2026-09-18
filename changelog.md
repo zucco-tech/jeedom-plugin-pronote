@@ -1,5 +1,77 @@
 # Changelog
 
+## 1.1.0-beta.1
+Objectif : dépasser ce qu'offre ProJote tout en gardant ce qui fait la
+différence (aucun démon, 4 connexions par jour, agenda).
+
+### Panneau « Pronote » (menu Accueil)
+- Page dédiée pour tous les élèves, activable dans la configuration du plugin :
+  chiffres clés (moyenne / classe, devoirs, absences, période en cours avec sa
+  barre d'avancement, prochaines vacances), alertes, **emploi du temps sur deux
+  semaines** en grille horaire (trait « maintenant », cours annulés, contrôles),
+  devoirs jour par jour avec les devoirs faits, **moyennes par matière** en
+  barres élève / classe, dernières notes, vie scolaire détaillée, messagerie et
+  informations, menus de la semaine, lien d'abonnement agenda.
+
+### Export agenda (iCal)
+- `core/php/ical.php?apikey=<clé du plugin>&id=<élève>` : cours (annulés
+  marqués), devoirs (journée entière, ou `&todo=1` en tâches) et vacances de
+  l'établissement (`&vacances=0` pour les retirer). Lien affiché dans la fiche
+  de l'élève et le panneau. Clé du plugin uniquement — celle du core ne suffit pas.
+
+### Données nouvelles, sans connexion supplémentaire
+- **Période en cours** (nom, fin, avancement %, jours restants) et bornes de
+  l'année scolaire.
+- **Vacances et jours fériés publiés par l'établissement** dans Pronote :
+  commandes « Prochaines vacances » (nom, début, fin, jours restants) et, en
+  option (« Calendrier : établissement, sinon zone »), pause de la synchro sur
+  ce calendrier-là plutôt que sur celui de la zone.
+- **Matières en baisse** : comparaison de chaque moyenne par matière avec la
+  synchronisation précédente (repli de 0,5 point ou plus) — chaîne lisible et
+  événement binaire « Moyenne en baisse » pour les scénarios.
+- **Dernières notes** (détail HTML, sur 20 pour comparer), moyennes par matière
+  collectées même sans l'option « une commande par matière ».
+- **Vie scolaire détaillée** : absences et retards (date, durée, justifié ou
+  non, motif), compteur d'absences non justifiées.
+- **Messagerie et informations** : objets, expéditeurs, non lus ; informations
+  et sondages ; compteurs.
+- **Cantine** : labels alimentaires (bio, végétarien…) et menus de la semaine.
+- **Photo de profil** (option, désactivée par défaut) si l'établissement la
+  publie : affichée dans les widgets, la page du plugin et le panneau. Stockée
+  dans le dossier protégé du plugin, servie uniquement à un utilisateur connecté.
+- Emploi du temps et devoirs collectés sur **14 jours** (structurés dans
+  `data/student_<id>.json`) : le widget garde 7 jours, le panneau et l'iCal en
+  voient 14.
+
+### Robustesse
+- **Le jeton est sauvegardé même si la collecte échoue ensuite** : Pronote le
+  fait tourner à chaque connexion ; le script renvoie désormais le nouveau jeton
+  et les données partielles en cas d'exception, et Jeedom les applique. Plus de
+  ré-enrôlement après une erreur passagère sur un bloc.
+- Un bloc qui échoue n'empêche plus les autres d'être écrits.
+
+### Sécurité (revue complète du code)
+- **Secrets masqués côté navigateur** : `toArray()` remplace jeton, mot de
+  passe et PIN par `••••••••` (la page de l'élève et l'API JSON-RPC ne voient
+  plus le chiffré) ; la sauvegarde reconnaît le masque et conserve la valeur.
+- Fichiers privés créés en 0600 **avant** écriture (requête au script, données,
+  photo — `umask 077` côté Python), `.htaccess` « Deny from all » sur `data/`,
+  `resources/`, `tests/`, `plugin_info/` (icône exceptée).
+- Validation à la sauvegarde : PIN 2FA = 4 à 6 chiffres, URL Pronote en HTTPS.
+- Image du QR Code vérifiée par son contenu (`getimagesize`) avant décodage,
+  nom de fichier temporaire aléatoire.
+- Tous les endpoints vérifient le type d'équipement ; le message d'erreur
+  d'action inconnue ne reflète plus l'entrée.
+- `SECURITY.md` : modèle de menace et décisions.
+
+### Compatibilité et qualité
+- `pronotepy >= 2.15.6` (serveurs PRONOTE 2026), Python 3.9 à 3.13 (Debian 11+).
+- Intégration continue GitHub : lint PHP 8.1/8.4, script Python sur 3.9/3.11/3.13
+  avec jeu d'essai, `pytest tests/test_fetch.py`.
+- Suites Jeedom : 80 vérifications unitaires, 113 d'intégration (iCal en HTTP
+  réel, photo, `.htaccess`, masquage, vacances établissement, panneau).
+
+
 ## 1.0.0-beta.1
 - Première version, **bêta** : une seule installation testée (Jeedom 4.6.1,
   un compte Parents, un établissement).

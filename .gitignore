@@ -5,3 +5,6 @@ __pycache__/
 # Fichiers temporaires de Jeedom / de l'éditeur
 *.swp
 .DS_Store
+# Données des élèves (photos, cours, devoirs) : jamais versionnées
+data/*
+!data/.htaccess

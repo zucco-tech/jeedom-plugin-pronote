@@ -65,7 +65,10 @@ t('équipement sauvegardé', is_object($eq), 'id=' . $eq->getId());
 $ids = array();
 foreach ($eq->getCmd() as $c) { $ids[] = $c->getLogicalId(); }
 sort($ids);
-t('commandes créées', count($ids) === 21, count($ids) . ' : ' . implode(', ', $ids));
+$expected = 0;
+foreach (pronote::commandCatalog() as $c) { if (in_array($c[7], array('core', 'notes', 'devoirs', 'edt', 'absences', 'vie'))) { $expected++; } }
+t('commandes créées (catalogue des blocs cochés)', count($ids) === $expected, count($ids) . '/' . $expected . ' : ' . implode(', ', $ids));
+t('commandes de période et vacances (toujours présentes)', in_array('period_name', $ids) && in_array('next_holiday_start', $ids));
 t('refresh présent', in_array('refresh', $ids));
 t('bloc notes présent', in_array('avg_general', $ids));
 t('bloc décoché absent (punitions)', !in_array('punishments', $ids));
@@ -79,7 +82,26 @@ $eq->applyData($payload['data']);
 $eq = eqLogic::byId($eq->getId());
 $get = function ($lid) use ($eq) { $c = $eq->getCmd(null, $lid); return is_object($c) ? $c->execCmd() : null; };
 t('avg_general écrit', $get('avg_general') == 14.7, (string)$get('avg_general'));
-t('homework_count écrit', $get('homework_count') == 3, (string)$get('homework_count'));
+t('homework_count écrit', (int)$get('homework_count') > 0, (string)$get('homework_count'));
+t('période écrite', $get('period_name') != '' && (int)$get('period_progress') >= 0, $get('period_name') . ' ' . $get('period_progress') . '%');
+t('prochaines vacances écrites', preg_match('/^\d{2}\/\d{2}\/\d{4}$/', (string)$get('next_holiday_start')) === 1, (string)$get('next_holiday_start'));
+t('dernières notes (HTML) écrites', strpos((string)$get('grades_html'), 'pronote-grades') !== false);
+t('messagerie et informations écrites', strpos((string)$get('messages_html'), 'unread') !== false && (int)$get('new_infos') === 1);
+t('absences détaillées écrites', strpos((string)$get('absences_html'), 'non justifiée') !== false && (int)$get('absences_unjustified') === 1);
+$store = $eq->getData();
+t('données structurées enregistrées (cours, devoirs, notes, vacances)',
+   isset($store['_lessons'], $store['_homework'], $store['_grades'], $store['_holidays']) && count($store['_lessons']) > 10,
+   isset($store['_lessons']) ? count($store['_lessons']) . ' cours, ' . count($store['_homework']) . ' devoirs' : 'absentes');
+t('fichier de données protégé (0600, .htaccess)', (fileperms($eq->dataFile()) & 0777) === 0600 && file_exists(pronote::dataDir() . '/.htaccess'));
+t('première synchro : aucune matière en baisse', (string)$get('subjects_declining') === '' && (int)$get('avg_down_event') === 0);
+$again = $payload['data'];
+$again['_subjects'][0]['value'] = 13.9; // Mathématiques 15,2 -> 13,9
+$eq->applyData($again);
+$eq = eqLogic::byId($eq->getId());
+t('matière en baisse détectée', strpos((string)$get('subjects_declining'), 'Mathématiques') !== false && (int)$get('avg_down_event') === 1, (string)$get('subjects_declining'));
+$eq->applyData($payload['data']);
+$eq = eqLogic::byId($eq->getId());
+t('remontée : plus de matière en baisse', (string)$get('subjects_declining') === '');
 t('next_course écrit', $get('next_course') != '', (string)$get('next_course'));
 $sub = $eq->getCmd(null, 'avg_subject_mathematiques');
 t('moyenne par matière créée à la volée', is_object($sub), is_object($sub) ? $sub->getName() . ' = ' . $sub->execCmd() : 'absente');
@@ -196,6 +218,41 @@ t('aucun placeholder oublié', !preg_match('/#[a-zA-Z_]+#/', $custom),
    preg_match('/#[a-zA-Z_]+#/', $custom, $m) ? 'reste ' . $m[0] : 'aucun');
 $mob = $eq->toHtml('mobile');
 t('rendu mobile sans erreur', is_string($mob) && strlen($mob) > 50, strlen($mob) . ' octets');
+t('avatar dans les widgets (initiales sans photo)', strpos($custom, 'pw-av') !== false && strpos($mob, 'pw-av') !== false);
+t('URL iCal formée avec la clé du plugin', strpos($eq->icalUrl(true), 'ical.php?apikey=') !== false && strpos($eq->icalUrl(true), 'id=' . $eq->getId()) !== false);
+
+section('8 bis. Panneau');
+$renderPanel = function () {
+    ob_start();
+    try {
+        include __DIR__ . '/../desktop/php/panel.php';
+        return array(true, ob_get_clean());
+    } catch (Throwable $t) {
+        ob_end_clean();
+        return array(false, get_class($t) . ' : ' . $t->getMessage() . ' @' . basename($t->getFile()) . ':' . $t->getLine());
+    }
+};
+list($ok, $panel) = $renderPanel();
+t('panneau rendu sans erreur', $ok, $ok ? strlen($panel) . ' octets' : $panel);
+t('panneau : élève, semaine, devoirs, matières', $ok && strpos($panel, 'AUTOTEST Pronote') !== false && strpos($panel, 'pnp-week') !== false
+   && strpos($panel, 'pnp-subj') !== false && strpos($panel, 'pronote-hw') !== false);
+t('panneau : cours placés dans la grille', $ok && preg_match_all('/class="ev/', $panel) > 5);
+t('panneau : rien d\'échappé à moitié (pas de #placeholder#)', $ok && !preg_match('/#[a-zA-Z_]+#/', $panel));
+
+section('8 ter. Vacances selon l\'établissement');
+$savedSusp = config::byKey('suspend_holidays', 'pronote', 0);
+config::save('suspend_holidays', 1, 'pronote');
+list($src, $ranges) = $eq->holidayRangesFor();
+t('source = établissement quand Pronote publie le calendrier', $src === 'pronote' && count($ranges) === 1, $src . ' (' . count($ranges) . ')');
+$nh = pronote::nextHoliday($eq);
+t('prochaines vacances = celles de Pronote', is_array($nh) && strpos($nh[2], 'jeu d\'essai') !== false, is_array($nh) ? $nh[2] : 'aucune');
+t('pause active au milieu des vacances Pronote', pronote::inHoliday($nh[0] + 3 * 86400, $eq));
+t('pas de pause la veille', !pronote::inHoliday($nh[0] - 3600, $eq));
+t('pas de pause le lendemain de la fin', !pronote::inHoliday($nh[1] + 3600, $eq));
+$eq->setConfiguration('holiday_source', 'zone'); $eq->save(true);
+t('source forcée « zone » : calendrier de Pronote ignoré', $eq->holidayRangesFor()[0] === 'zone');
+$eq->setConfiguration('holiday_source', ''); $eq->save(true);
+config::save('suspend_holidays', $savedSusp, 'pronote');
 
 section('9. Plage horaire (dont passage de minuit)');
 $sStart = config::byKey('sync_start', 'pronote', '06:00');

@@ -15,6 +15,8 @@
     .eqLogic[data-eqLogic_uid="#uid#"] .widget-name{flex:none}
     .eqLogic[data-eqLogic_uid="#uid#"] .pronote-m{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
     .pronote-m{text-align:left;padding:4px 12px 10px;color:var(--txt-color);line-height:1.3}
+    .pronote-m .pw-av{width:40px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85em;color:#fff;background:hsl(var(--h,200),50%,48%);overflow:hidden}
+    .pronote-m .pw-av img{width:100%;height:100%;object-fit:cover;display:block}
     .pronote-m .pw-stats{display:flex;gap:1px;margin:8px 0;border-radius:var(--border-radius);overflow:hidden;background:rgba(128,128,128,.18)}
     .pronote-m .pw-stat{flex:1;text-align:center;padding:10px 4px;background:var(--eq-bg-color,transparent)}
     .pronote-m .pw-stat b{display:block;font-size:1.8em;font-weight:300;line-height:1.05}
@@ -43,6 +45,7 @@
   <div class="pronote-m">
     #alerte#
     <div class="pw-stats">
+      <div class="pw-av" style="--h:#avatarHue#">#avatar#</div>
       <div class="pw-stat"><b>#moyenne#</b><span>Moyenne</span></div>
       <div class="pw-stat"><b>#devoirsNb#</b><span>Devoirs</span></div>
       <div class="pw-stat"><b>#absences#</b><span>Absences</span></div>

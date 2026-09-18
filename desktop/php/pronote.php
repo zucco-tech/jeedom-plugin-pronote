@@ -12,6 +12,10 @@ sendVarToJS('eqType', $pluginId);
 
 $eqLogics = eqLogic::byType($pluginId);
 $dep = pronote::dependancy_info();
+$photoIds = array();
+foreach ($eqLogics as $e) { if ($e->hasPhoto()) { $photoIds[] = (int)$e->getId(); } }
+sendVarToJS('pronotePhotoIds', $photoIds);
+sendVarToJS('pronoteIcalBase', rtrim(network::getNetworkAccess('external'), '/') . '/plugins/pronote/core/php/ical.php?apikey=' . urlencode((string)jeedom::getApiKey('pronote')) . '&id=');
 $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
 ?>
 <style>
@@ -53,7 +57,9 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
   .pronote-page .pn-card{width:250px;padding:14px 16px;border-radius:var(--border-radius,6px);background:var(--panel-bg-color,rgba(128,140,155,.08));border:1px solid var(--pn-line);display:flex;gap:12px;align-items:center;transition:transform .12s,box-shadow .12s}
   .pronote-page .pn-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
   .pronote-page .pn-card.add{border-style:dashed;justify-content:center;color:var(--pn-accent);font-weight:500}
-  .pronote-page .pn-av{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;color:#fff;background:hsl(var(--h,200),50%,48%)}
+  .pronote-page .pn-av{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;color:#fff;background:hsl(var(--h,200),50%,48%);overflow:hidden}
+  .pronote-page .pn-av img{width:100%;height:100%;object-fit:cover;display:block}
+  .pronote-page .pn-ical code{font-size:11px;padding:3px 6px;border-radius:4px;background:var(--pn-soft);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
   .pronote-page .pn-card .pn-n{font-size:14px;font-weight:500;line-height:1.2}
   .pronote-page .pn-card .pn-c{font-size:11.5px;opacity:.65;line-height:1.3}
   .pronote-page .pn-card .pn-s{display:flex;align-items:center;gap:6px;font-size:11px;margin-top:5px}
@@ -140,6 +146,9 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
             <?php if (pronote::inHoliday()) { ?>{{Pause vacances en cours}}<?php if ($nh) { ?> <b>{{jusqu'au}} <?php echo date('d/m', $nh[1]); ?></b><?php } ?><?php } elseif ($nh) { ?>{{Pause vacances}} <b>{{du}} <?php echo date('d/m', $nh[0]); ?> {{au}} <?php echo date('d/m', $nh[1]); ?></b><?php } else { ?>{{Pause vacances : calendrier indisponible}}<?php } ?>
           </span>
         <?php } ?>
+        <?php if (config::byKey('displayDesktopPanel', 'pronote', 0) == 1) { ?>
+          <a class="btn btn-default btn-sm" href="index.php?v=d&m=pronote&p=panel"><i class="fas fa-columns"></i> {{Panneau}}</a>
+        <?php } ?>
         <a class="btn btn-default btn-sm eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Configuration du plugin}}</a>
       </div>
     </div>
@@ -181,7 +190,9 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
             $rythme = $eqLogic->rhythmLabel();
             echo '<div class="eqLogicDisplayCard cursor pn-row' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
             echo '<div class="pn-rowbox">';
-            echo '<div class="pn-av" style="--h:' . pronote::hue($name) . '">' . htmlspecialchars(pronote::initials($name)) . '</div>';
+            echo '<div class="pn-av" style="--h:' . pronote::hue($name) . '">' . ($eqLogic->hasPhoto()
+                ? '<img src="plugins/pronote/core/ajax/pronote.ajax.php?action=photo&id=' . (int)$eqLogic->getId() . '&t=' . (int)@filemtime($eqLogic->photoFile()) . '" alt="" />'
+                : htmlspecialchars(pronote::initials($name))) . '</div>';
             echo '<div style="min-width:0"><div class="pn-title">' . htmlspecialchars($name) . '</div>';
             echo '<div class="pn-c">' . ($sub !== '' ? htmlspecialchars($sub) : '{{Classe et établissement remontés à la première synchronisation}}') . '</div></div>';
             echo '<span class="pn-meta"><span class="pn-dot ' . $dot . '"></span>' . htmlspecialchars($status) . '</span>';
@@ -244,7 +255,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                     <div class="col-sm-8">
                       <select class="eqLogicAttr form-control" data-l1key="object_id">
                         <option value="">{{Aucun}}</option>
-                        <?php foreach (jeeObject::all() as $object) { echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>'; } ?>
+                        <?php foreach (jeeObject::all() as $object) { echo '<option value="' . (int)$object->getId() . '">' . htmlspecialchars($object->getName()) . '</option>'; } ?>
                       </select>
                     </div>
                   </div>
@@ -252,7 +263,7 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                     <label class="col-sm-4 control-label">{{Catégorie}}</label>
                     <div class="col-sm-8">
                       <?php foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
-                          echo '<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" /> ' . $value['name'] . '</label>';
+                          echo '<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . htmlspecialchars($key) . '" /> ' . htmlspecialchars($value['name']) . '</label>';
                       } ?>
                     </div>
                   </div>
@@ -409,6 +420,19 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                   {{devoirs sur}} <b><?php echo (int)config::byKey('homework_days', 'pronote', 7); ?> {{jours}}</b><?php if (config::byKey('suspend_holidays', 'pronote', 0) == 1) { ?>, {{pause pendant les vacances}}<?php } ?>.
                   <div style="margin-top:8px"><a class="btn btn-default btn-xs eqLogicAction" data-action="gotoPluginConf"><i class="fas fa-wrench"></i> {{Modifier dans la configuration du plugin}}</a>
                   <span class="help-block" style="display:inline;margin-left:8px">{{Ces réglages valent pour tous les élèves : c'est votre adresse IP que Pronote compte, pas chaque enfant.}}</span></div>
+                </div>
+              </div>
+
+              <div class="pn-sec pn-ical">
+                <h4><i class="fas fa-calendar-plus"></i> {{Agenda (iCal)}}</h4>
+                <div style="font-size:12.5px;opacity:.8">
+                  {{Cours, devoirs et vacances de l'élève, à ajouter par « abonnement à un calendrier » dans Google Agenda, Apple Calendrier, Outlook ou Thunderbird. Mis à jour à chaque synchronisation.}}
+                  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <code id="pn_ical_url">—</code>
+                    <a class="btn btn-default btn-xs" id="bt_icalCopy"><i class="fas fa-copy"></i> {{Copier}}</a>
+                    <a class="btn btn-default btn-xs" id="bt_icalOpen" target="_blank" href="#"><i class="fas fa-download"></i> {{Télécharger}}</a>
+                  </div>
+                  <span class="help-block" style="margin-top:6px">{{Le lien contient la clé API du plugin : à ne partager qu'avec les agendas de la famille. Elle se régénère depuis Réglages › Système › Configuration › API.}}</span>
                 </div>
               </div>
             </form>

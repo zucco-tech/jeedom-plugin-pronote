@@ -3,10 +3,42 @@ try {
     require_once __DIR__ . '/../../../../core/php/core.inc.php';
     include_file('core', 'authentification', 'php');
 
+    /* Photo de profil : lisible par tout utilisateur connecté (elle s'affiche
+       sur le dashboard), jamais par une URL directe (dossier data fermé). */
+    if (init('action') == 'photo') {
+        if (!isConnect()) {
+            http_response_code(401);
+            exit;
+        }
+        $eqLogic = pronote::byId((int)init('id'));
+        if (!is_object($eqLogic) || !$eqLogic->hasPhoto()) {
+            http_response_code(404);
+            exit;
+        }
+        $file = $eqLogic->photoFile();
+        $head = (string)@file_get_contents($file, false, null, 0, 4);
+        $mime = (substr($head, 0, 4) === "\x89PNG") ? 'image/png' : 'image/jpeg';
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($file));
+        header('Cache-Control: private, max-age=3600');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: inline; filename="photo.jpg"');
+        readfile($file);
+        exit;
+    }
+
     if (!isConnect('admin')) {
         throw new Exception(__('401 - Accès non autorisé', __FILE__));
     }
     ajax::init();
+
+    $student = function () {
+        $eqLogic = pronote::byId((int)init('id'));
+        if (!is_object($eqLogic) || $eqLogic->getEqType_name() !== 'pronote') {
+            throw new Exception(__('Équipement introuvable', __FILE__));
+        }
+        return $eqLogic;
+    };
 
     if (init('action') == 'selftest') {
         $py = pronote::getPythonPath();
@@ -19,20 +51,15 @@ try {
         if (!is_array($payload)) {
             throw new Exception(__('Sortie illisible : ', __FILE__) . substr((string)$out, 0, 300));
         }
-        $eqLogic = pronote::byId(init('id'));
-        if (is_object($eqLogic)) {
-            $eqLogic->applyData($payload['data']);
-            $eqLogic->setCache('lastSync', time());
-            $eqLogic->setCache('lastError', '');
-        }
+        $eqLogic = $student();
+        $eqLogic->applyData($payload['data']);
+        $eqLogic->setCache('lastSync', time());
+        $eqLogic->setCache('lastError', '');
         ajax::success($payload);
     }
 
     if (init('action') == 'sync') {
-        $eqLogic = pronote::byId(init('id'));
-        if (!is_object($eqLogic)) {
-            throw new Exception(__('Équipement introuvable', __FILE__));
-        }
+        $eqLogic = $student();
         $payload = $eqLogic->synchronize();
         if (!isset($payload['ok']) || $payload['ok'] !== true) {
             throw new Exception($payload['error']);
@@ -42,10 +69,7 @@ try {
     }
 
     if (init('action') == 'enroll') {
-        $eqLogic = pronote::byId(init('id'));
-        if (!is_object($eqLogic)) {
-            throw new Exception(__('Équipement introuvable', __FILE__));
-        }
+        $eqLogic = $student();
         $qr = json_decode(init('qr'), true);
         if (!is_array($qr)) {
             throw new Exception(__('Contenu du QR Code illisible (JSON attendu)', __FILE__));
@@ -82,10 +106,16 @@ try {
         if ($_FILES['image']['size'] > 8 * 1024 * 1024) {
             throw new Exception(__('Image trop volumineuse (8 Mo maximum)', __FILE__));
         }
-        $tmp = jeedom::getTmpFolder('pronote') . '/qr_' . getmypid() . '_' . time() . '.img';
+        // Vérification par le contenu, pas par l'extension ni le type annoncé.
+        $info = @getimagesize($_FILES['image']['tmp_name']);
+        if ($info === false || !in_array($info[2], array(IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP, IMAGETYPE_BMP))) {
+            throw new Exception(__('Le fichier envoyé n\'est pas une image (JPEG, PNG, GIF, WebP ou BMP attendu)', __FILE__));
+        }
+        $tmp = jeedom::getTmpFolder('pronote') . '/qr_' . getmypid() . '_' . bin2hex(random_bytes(4)) . '.img';
         if (!move_uploaded_file($_FILES['image']['tmp_name'], $tmp)) {
             throw new Exception(__('Impossible de lire le fichier envoyé', __FILE__));
         }
+        @chmod($tmp, 0600);
         $payload = pronote::decodeQrImage($tmp);
         // L'image porte un jeton d'accès : on ne la garde pas sur le disque.
         @unlink($tmp);
@@ -103,7 +133,7 @@ try {
         ));
     }
 
-    throw new Exception(__('Aucune méthode correspondante à : ', __FILE__) . init('action'));
+    throw new Exception(__('Aucune méthode correspondante', __FILE__));
 
 } catch (Exception $e) {
     ajax::error(displayException($e), $e->getCode());

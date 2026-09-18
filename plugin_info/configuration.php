@@ -101,7 +101,8 @@ if (!isConnect('admin')) {
       <label class="col-sm-3 control-label">{{Options}}</label>
       <div class="col-sm-8">
         <label class="checkbox-inline" style="display:block;margin:0 0 6px"><input type="checkbox" class="configKey" data-l1key="per_subject" /> {{Une commande de moyenne par matière}} <span class="help-block" style="display:inline;margin-left:6px">{{(moyenne de l'élève, de la classe, dernière note — créées à la première synchronisation)}}</span></label>
-        <label class="checkbox-inline" style="display:block;margin:0"><input type="checkbox" class="configKey" data-l1key="skip_done" /> {{Ignorer les devoirs cochés « fait » dans Pronote}}</label>
+        <label class="checkbox-inline" style="display:block;margin:0 0 6px"><input type="checkbox" class="configKey" data-l1key="skip_done" /> {{Ignorer les devoirs cochés « fait » dans Pronote}}</label>
+        <label class="checkbox-inline" style="display:block;margin:0"><input type="checkbox" class="configKey" data-l1key="fetch_photo" /> {{Récupérer la photo de profil}} <span class="help-block" style="display:inline;margin-left:6px">{{(si l'établissement la publie ; stockée dans le dossier protégé du plugin, jamais dans la base ni les sauvegardes de commandes ; supprimée avec l'élève)}}</span></label>
       </div>
     </div>
     <div class="form-group">
@@ -121,6 +122,17 @@ if (!isConnect('admin')) {
         <input type="checkbox" class="configKey" data-l1key="suspend_holidays" />
         <span class="help-block">{{À quoi ça sert : pendant les vacances, Pronote n'a rien de nouveau à donner, mais chaque synchronisation reste une connexion comptée sur votre adresse IP — et Index Éducation suspend les adresses trop bavardes. La pause arrête d'interroger Pronote du premier au dernier jour des vacances de votre zone, puis reprend seule à la rentrée. Calendrier officiel du ministère, rafraîchi chaque semaine ; s'il est indisponible, rien n'est suspendu.}}</span>
       </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Calendrier}}</label>
+      <div class="col-sm-3">
+        <select class="configKey form-control" data-l1key="holiday_source">
+          <option value="auto">{{Établissement, sinon zone}}</option>
+          <option value="pronote">{{Établissement (Pronote) seulement}}</option>
+          <option value="zone">{{Zone officielle seulement}}</option>
+        </select>
+      </div>
+      <div class="col-sm-5"><span class="help-block">{{Pronote publie le calendrier propre à l'établissement (ponts, fermetures, vacances). Il est lu à chaque synchronisation et prime sur la zone quand il existe.}}</span></div>
     </div>
     <div class="form-group">
       <label class="col-sm-3 control-label">{{Zone}}</label>
@@ -154,6 +166,13 @@ if (!isConnect('admin')) {
       <div class="col-sm-6">
         <input type="checkbox" class="configKey" data-l1key="custom_widget" checked />
         <span class="help-block">{{Coché : tuile compacte (moyenne, devoirs, absences, prochain cours). Décoché : liste brute de toutes les commandes.}}</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">{{Panneau « Pronote »}}</label>
+      <div class="col-sm-6">
+        <input type="checkbox" class="configKey" data-l1key="displayDesktopPanel" />
+        <span class="help-block">{{Page dédiée sous le menu Accueil : tous les élèves, semaine complète, devoirs, notes par matière, vie scolaire, cantine, abonnement agenda (iCal).}}</span>
       </div>
     </div>
   </fieldset>

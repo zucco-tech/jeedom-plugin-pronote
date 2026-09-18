@@ -28,6 +28,75 @@ class pronote extends eqLogic {
         return self::getPluginPath() . '/resources/pronote/pronote_fetch.py';
     }
 
+    /**
+     * Dossier de données du plugin : photos et données structurées (cours,
+     * devoirs, notes, vacances) de chaque élève. Sous le web root, donc
+     * fermé par un .htaccess « Deny from all » — on ne sert ces fichiers que
+     * par l'AJAX authentifié. Il survit aux mises à jour du plugin.
+     */
+    public static function dataDir() {
+        $dir = self::getPluginPath() . '/data';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0770, true);
+        }
+        $ht = $dir . '/.htaccess';
+        if (!file_exists($ht)) {
+            @file_put_contents($ht, "Order allow,deny\nDeny from all\n");
+        }
+        return $dir;
+    }
+
+    /**
+     * Écrit un fichier lisible par son seul propriétaire : le descripteur est
+     * créé vide puis passé en 0600 AVANT d'y mettre le contenu, pour ne jamais
+     * laisser une fenêtre où le fichier serait lisible par d'autres.
+     */
+    public static function writePrivate($_path, $_content) {
+        $old = umask(0077);
+        try {
+            $fh = @fopen($_path, 'c');
+            if ($fh === false) {
+                return false;
+            }
+            @chmod($_path, 0600);
+            ftruncate($fh, 0);
+            $ok = (fwrite($fh, (string)$_content) !== false);
+            fclose($fh);
+            return $ok;
+        } finally {
+            umask($old);
+        }
+    }
+
+    public function dataFile() {
+        return self::dataDir() . '/student_' . (int)$this->getId() . '.json';
+    }
+
+    public function photoFile() {
+        return self::dataDir() . '/photo_' . (int)$this->getId() . '.jpg';
+    }
+
+    /** Données structurées de la dernière synchronisation (tableau, jamais null). */
+    public function getData() {
+        $f = $this->dataFile();
+        if (!file_exists($f)) {
+            return array();
+        }
+        $d = json_decode((string)@file_get_contents($f), true);
+        return is_array($d) ? $d : array();
+    }
+
+    public function hasPhoto() {
+        return ($this->setting('fetch_photo') == 1) && file_exists($this->photoFile());
+    }
+
+    /** URL d'abonnement iCal de cet élève (clé API du plugin). */
+    public function icalUrl($_internal = false) {
+        $base = network::getNetworkAccess($_internal ? 'internal' : 'external');
+        return rtrim($base, '/') . '/plugins/pronote/core/php/ical.php?apikey='
+             . urlencode((string)jeedom::getApiKey('pronote')) . '&id=' . (int)$this->getId();
+    }
+
     /* ------------------------------------------------------------------ */
     /* Réglages : plugin par défaut, surcharge par élève si renseignée     */
     /* ------------------------------------------------------------------ */
@@ -35,6 +104,7 @@ class pronote extends eqLogic {
     const PLUGIN_SETTINGS = array(
         'sync_mode' => 'times', 'sync_times' => '06:30,12:00,16:30,20:00', 'frequency' => 30,
         'homework_days' => 7, 'per_subject' => 0, 'skip_done' => 0, 'device_name' => 'Jeedom',
+        'fetch_photo' => 0, 'holiday_source' => 'auto',
     );
 
     /** Heures fixes de synchronisation (minutes depuis minuit), triées, dédoublonnées. */
@@ -87,6 +157,36 @@ class pronote extends eqLogic {
 
     const SECRET_KEYS = array('credentials', 'password', 'account_pin');
     const SECRET_PREFIX = 'enc:';
+    /** Ce que le navigateur voit à la place d'un secret (même chiffré). */
+    const SECRET_MASK = '••••••••';
+
+    /**
+     * Jeedom envoie toute la configuration de l'équipement au navigateur
+     * (page de l'élève, API JSON-RPC). Les secrets n'y ont rien à faire, même
+     * chiffrés : ils sont remplacés par un masque, que preSave() reconnaît pour
+     * ne pas écraser la vraie valeur au retour.
+     */
+    public function toArray() {
+        $a = parent::toArray();
+        if (isset($a['configuration']) && is_array($a['configuration'])) {
+            foreach (self::SECRET_KEYS as $k) {
+                if (isset($a['configuration'][$k]) && (string)$a['configuration'][$k] !== '') {
+                    $a['configuration'][$k] = self::SECRET_MASK;
+                }
+            }
+        }
+        return $a;
+    }
+
+    /** Remet les secrets réels à la place du masque renvoyé par le navigateur. */
+    protected function restoreMaskedSecrets() {
+        $stored = ($this->getId() != '') ? eqLogic::byId($this->getId()) : null;
+        foreach (self::SECRET_KEYS as $k) {
+            if ((string)$this->getConfiguration($k, '') === self::SECRET_MASK) {
+                $this->setConfiguration($k, is_object($stored) ? (string)$stored->getConfiguration($k, '') : '');
+            }
+        }
+    }
 
     /** Lit une configuration sensible, chiffrée ou non (migration transparente). */
     public function getSecret($_key, $_default = '') {
@@ -321,7 +421,7 @@ class pronote extends eqLogic {
         if (!self::inSyncWindow($now)) {
             return false;
         }
-        if (self::inHoliday($now)) {
+        if (self::inHoliday($now, $this)) {
             return false;
         }
 
@@ -426,7 +526,19 @@ class pronote extends eqLogic {
             cache::set($lockKey, 0, 1);
         }
 
+        // Le jeton tourne à chaque connexion : dès qu'il revient, on l'écrit,
+        // même si la collecte a échoué ensuite — sinon la synchro suivante
+        // échouerait et il faudrait ré-enrôler.
+        if (isset($payload['credentials']) && is_array($payload['credentials'])) {
+            $this->setSecret('credentials', json_encode($payload['credentials']));
+            $this->save(true);
+        }
+
         if (!isset($payload['ok']) || $payload['ok'] !== true) {
+            if (isset($payload['data']) && is_array($payload['data']) && count($payload['data']) > 2) {
+                // Collecte interrompue : ce qui a été lu est quand même appliqué.
+                $this->applyData($payload['data']);
+            }
             $err = isset($payload['error']) ? $payload['error'] : 'erreur inconnue';
             $fails = (int)$this->getCache('failCount', 0) + 1;
             $this->setCache('failCount', $fails);
@@ -439,13 +551,6 @@ class pronote extends eqLogic {
                 . ' (échec ' . $fails . ', prochaine tentative dans ' . round($this->nextDelay() / 60) . ' min)');
             $this->notifyOnce($payload, $err);
             return $payload;
-        }
-
-        // Le jeton tourne à chaque connexion : il faut le réécrire, sinon la
-        // synchronisation suivante échouera.
-        if (isset($payload['credentials']) && is_array($payload['credentials'])) {
-            $this->setSecret('credentials', json_encode($payload['credentials']));
-            $this->save(true);
         }
 
         $this->applyData(isset($payload['data']) ? $payload['data'] : array());
@@ -507,14 +612,14 @@ class pronote extends eqLogic {
             'per_subject' => ($this->setting('per_subject') == 1),
             'skip_done'   => ($this->setting('skip_done') == 1),
             'data'        => $this->enabledData(),
+            'photo_path'  => ($this->setting('fetch_photo') == 1) ? $this->photoFile() : '',
             'log_level'   => config::byKey('log_level', 'pronote', 'info'),
         ), $extra);
 
         // Le fichier de requête porte le jeton : lisible par son propriétaire seul,
         // et supprimé quoi qu'il arrive.
-        $tmp = jeedom::getTmpFolder('pronote') . '/req_' . $this->getId() . '_' . getmypid() . '.json';
-        file_put_contents($tmp, json_encode($request));
-        @chmod($tmp, 0600);
+        $tmp = jeedom::getTmpFolder('pronote') . '/req_' . $this->getId() . '_' . getmypid() . '_' . bin2hex(random_bytes(4)) . '.json';
+        self::writePrivate($tmp, json_encode($request));
 
         // Borne dure : un serveur Pronote qui ne répond plus ne doit pas bloquer
         // le cron. Une synchro normale prend une à deux secondes.
@@ -645,6 +750,52 @@ class pronote extends eqLogic {
             $this->setCache('gradesCount', $count);
         }
 
+        /* Données structurées (cours, devoirs, notes, vacances) : fichier du
+           plugin, hors base, réécrit à chaque synchro. Sert au panneau, à
+           l'export iCal et à la pause vacances « selon l'établissement ». */
+        $store = $this->getData();
+        foreach (array('_lessons', '_homework', '_grades', '_holidays', '_subjects') as $k) {
+            if (isset($data[$k]) && is_array($data[$k])) {
+                $store[$k] = $data[$k];
+            }
+        }
+        $store['_updated'] = time();
+        $store['_meta'] = isset($data['_meta']) ? $data['_meta'] : (isset($store['_meta']) ? $store['_meta'] : array());
+        self::writePrivate($this->dataFile(), json_encode($store, JSON_UNESCAPED_UNICODE));
+
+        if (isset($data['_photo']) && !$data['_photo'] && file_exists($this->photoFile())) {
+            @unlink($this->photoFile());
+        }
+
+        /* Matières en baisse : moyenne par matière comparée à la synchro
+           précédente (repli de 0,5 point ou plus). Chaîne lisible pour le
+           widget et binaire pour les scénarios. */
+        if (isset($data['_subjects']) && is_array($data['_subjects'])) {
+            $prev = json_decode((string)$this->getCache('subjectAvgs', ''), true);
+            $prev = is_array($prev) ? $prev : array();
+            $cur = array();
+            $down = array();
+            foreach ($data['_subjects'] as $subject) {
+                if (!isset($subject['slug'], $subject['value'])) {
+                    continue;
+                }
+                $cur[$subject['slug']] = (float)$subject['value'];
+                if (isset($prev[$subject['slug']]) && (float)$prev[$subject['slug']] - (float)$subject['value'] >= 0.5) {
+                    $down[] = $subject['name'] . ' ' . str_replace('.', ',', (string)round($prev[$subject['slug']], 1))
+                            . ' → ' . str_replace('.', ',', (string)round($subject['value'], 1));
+                }
+            }
+            $this->setCache('subjectAvgs', json_encode($cur));
+            $cmd = $this->getCmd(null, 'subjects_declining');
+            if (is_object($cmd)) {
+                $cmd->event(implode(' · ', $down));
+            }
+            $evt = $this->getCmd(null, 'avg_down_event');
+            if (is_object($evt)) {
+                $evt->event(count($down) ? 1 : 0);
+            }
+        }
+
         // Détail par matière : commandes créées à la volée si l'option est active.
         if ($this->setting('per_subject') == 1 && isset($data['_subjects']) && is_array($data['_subjects'])) {
             foreach ($data['_subjects'] as $subject) {
@@ -764,13 +915,51 @@ class pronote extends eqLogic {
         return $ranges;
     }
 
+    /**
+     * Vacances publiées par l'établissement dans Pronote (dernière synchro) :
+     * liste de [début, fin, libellé], bornes inclusives en journées locales.
+     * Vide si l'établissement ne les publie pas ou avant la première synchro.
+     */
+    public function pronoteHolidayRanges() {
+        $store = $this->getData();
+        $out = array();
+        foreach ((isset($store['_holidays']) && is_array($store['_holidays'])) ? $store['_holidays'] : array() as $h) {
+            if (!isset($h['start'], $h['end']) || (isset($h['kind']) && $h['kind'] !== 'vacances')) {
+                continue;
+            }
+            $a = strtotime($h['start'] . ' 00:00:00');
+            $b = strtotime($h['end'] . ' 23:59:59');
+            if ($a && $b && $b >= $a) {
+                $out[] = array($a, $b, isset($h['name']) ? (string)$h['name'] : '');
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Calendrier retenu pour cet élève : celui de l'établissement (Pronote)
+     * s'il existe et que la source est « auto » ou « pronote », sinon le
+     * calendrier officiel de la zone. Rend aussi la source, pour l'afficher.
+     */
+    public function holidayRangesFor() {
+        $source = (string)$this->setting('holiday_source');
+        if ($source !== 'zone') {
+            $own = $this->pronoteHolidayRanges();
+            if (count($own)) {
+                return array('pronote', $own);
+            }
+        }
+        return array('zone', self::holidayRanges());
+    }
+
     /** Sommes-nous en vacances scolaires ? (jamais vrai si la fonction est désactivée) */
-    public static function inHoliday($_ts = null) {
+    public static function inHoliday($_ts = null, $_eqLogic = null) {
         if (config::byKey('suspend_holidays', 'pronote', 0) != 1) {
             return false;
         }
         $ts = ($_ts === null) ? time() : (int)$_ts;
-        foreach (self::holidayRanges() as $r) {
+        $ranges = is_object($_eqLogic) ? $_eqLogic->holidayRangesFor()[1] : self::holidayRanges();
+        foreach ($ranges as $r) {
             if ($ts >= $r[0] && $ts <= $r[1]) {
                 return true;
             }
@@ -779,8 +968,9 @@ class pronote extends eqLogic {
     }
 
     /** Prochaine période de vacances : [début, fin, libellé] ou null. */
-    public static function nextHoliday() {
-        foreach (self::holidayRanges() as $r) {
+    public static function nextHoliday($_eqLogic = null) {
+        $ranges = is_object($_eqLogic) ? $_eqLogic->holidayRangesFor()[1] : self::holidayRanges();
+        foreach ($ranges as $r) {
             if ($r[1] >= time()) {
                 return $r;
             }
@@ -796,11 +986,29 @@ class pronote extends eqLogic {
         if (trim($this->getConfiguration('url', '')) === '' && $this->getConfiguration('mode', 'qr') !== 'qr') {
             throw new Exception(__('L\'URL de l\'espace élève est obligatoire', __FILE__));
         }
+        $this->restoreMaskedSecrets();
         $this->encryptSecrets();
+        /* Un PIN 2FA ne peut être que 4 à 6 chiffres : tout autre contenu est
+           une erreur de saisie, pas quelque chose à envoyer à Pronote. */
+        $pin = $this->getSecret('account_pin', '');
+        if ($pin !== '' && !preg_match('/^\d{4,6}$/', $pin)) {
+            throw new Exception(__('Le PIN 2FA du compte doit comporter 4 à 6 chiffres', __FILE__));
+        }
+        /* L'URL doit être un espace Pronote en HTTPS : pas de http://, pas
+           d'hôte arbitraire vers lequel expédier des identifiants. */
+        $url = trim((string)$this->getConfiguration('url', ''));
+        if ($url !== '' && !preg_match('#^https://[a-z0-9.-]+(:\d+)?/[^\s]*$#i', $url)) {
+            throw new Exception(__('L\'URL de l\'espace Pronote doit commencer par https://', __FILE__));
+        }
     }
 
     public function postSave() {
         $this->syncCommands();
+    }
+
+    public function preRemove() {
+        @unlink($this->dataFile());
+        @unlink($this->photoFile());
     }
 
     /** Catalogue des commandes : [logicalId, nom, type, sousType, unité, historisé, visible, bloc] */
@@ -808,12 +1016,24 @@ class pronote extends eqLogic {
         return array(
             array('refresh',            'Rafraîchir les données',   'action', 'other',   '',    0, 1, 'core'),
             array('last_sync',          'Dernière synchronisation', 'info',   'string',  '',    0, 1, 'core'),
+            array('period_name',        'Période en cours',         'info',   'string',  '',    0, 0, 'core'),
+            array('period_end',         'Fin de la période',        'info',   'string',  '',    0, 0, 'core'),
+            array('period_progress',    'Avancement de la période', 'info',   'numeric', '%',   0, 0, 'core'),
+            array('period_days_left',   'Jours avant la fin de période', 'info', 'numeric', 'j', 0, 0, 'core'),
+            array('school_year_end',    'Fin de l\'année scolaire', 'info',   'string',  '',    0, 0, 'core'),
+            array('next_holiday_name',  'Prochaines vacances',      'info',   'string',  '',    0, 0, 'core'),
+            array('next_holiday_start', 'Début des prochaines vacances', 'info', 'string', '', 0, 0, 'core'),
+            array('next_holiday_end',   'Fin des prochaines vacances', 'info', 'string',  '',    0, 0, 'core'),
+            array('days_to_holiday',    'Jours avant les vacances', 'info',   'numeric', 'j',   0, 0, 'core'),
 
             array('avg_general',        'Moyenne générale',         'info',   'numeric', '/20', 1, 1, 'notes'),
             array('avg_class',          'Moyenne de la classe',     'info',   'numeric', '/20', 1, 0, 'notes'),
             array('last_grade',         'Dernière note',            'info',   'string',  '',    0, 1, 'notes'),
             array('new_grades',         'Nouvelles notes (24 h)',   'info',   'numeric', '',    1, 1, 'notes'),
             array('grade_new_event',    'Nouvelle note (événement)','info',   'binary',  '',    1, 0, 'notes'),
+            array('grades_html',        'Dernières notes (détail)', 'info',   'string',  '',    0, 0, 'notes'),
+            array('subjects_declining', 'Matières en baisse',       'info',   'string',  '',    0, 0, 'notes'),
+            array('avg_down_event',     'Moyenne en baisse (événement)', 'info', 'binary', '', 1, 0, 'notes'),
 
             array('homework_count',     'Devoirs à faire',          'info',   'numeric', '',    1, 1, 'devoirs'),
             array('homework_tomorrow',  'Devoirs pour demain',      'info',   'numeric', '',    0, 1, 'devoirs'),
@@ -830,11 +1050,17 @@ class pronote extends eqLogic {
 
             array('absences',           'Absences de la période',   'info',   'numeric', 'h',   1, 1, 'absences'),
             array('delays',             'Retards de la période',    'info',   'numeric', '',    1, 1, 'absences'),
+            array('absences_unjustified', 'Absences non justifiées', 'info',  'numeric', '',    1, 0, 'absences'),
+            array('absences_html',      'Absences et retards (détail)', 'info', 'string', '',   0, 0, 'absences'),
 
             array('punishments',        'Punitions',                'info',   'numeric', '',    1, 0, 'punitions'),
             array('new_messages',       'Nouveaux messages',        'info',   'numeric', '',    0, 1, 'vie'),
+            array('new_infos',          'Informations non lues',    'info',   'numeric', '',    0, 0, 'vie'),
+            array('messages_html',      'Messagerie (détail)',      'info',   'string',  '',    0, 0, 'vie'),
+            array('infos_html',         'Informations et sondages (détail)', 'info', 'string', '', 0, 0, 'vie'),
             array('menu_today',         'Menu du jour',             'info',   'string',  '',    0, 1, 'cantine'),
             array('menu_tomorrow',      'Menu de demain',           'info',   'string',  '',    0, 0, 'cantine'),
+            array('menu_week_html',     'Menus de la semaine (détail)', 'info', 'string', '',   0, 0, 'cantine'),
             array('skills_html',        'Compétences (détail)',     'info',   'string',  '',    0, 1, 'competences'),
         );
     }
@@ -950,6 +1176,16 @@ class pronote extends eqLogic {
         if ((int)$get('delays', 0) > 0) {
             $badges[] = $pill((int)$get('delays') . ' retard(s)', 'var(--al-warning-color)');
         }
+        if ((int)$get('absences_unjustified', 0) > 0) {
+            $badges[] = $pill((int)$get('absences_unjustified') . ' absence(s) non justifiée(s)', 'var(--al-danger-color)');
+        }
+        if (trim((string)$get('subjects_declining', '')) !== '') {
+            $badges[] = $pill('en baisse : ' . $get('subjects_declining'), 'var(--al-warning-color)');
+        }
+        $nhs = (string)$get('next_holiday_start', '');
+        if ($nhs !== '' && (int)$get('days_to_holiday', 99) <= 14 && (int)$get('days_to_holiday', 99) > 0) {
+            $badges[] = $pill('vacances dans ' . (int)$get('days_to_holiday') . ' j', 'var(--al-success-color)');
+        }
         $replace['#badges#'] = empty($badges) ? ''
             : '<div class="pw-badges">' . implode('', $badges) . '</div>';
 
@@ -1015,8 +1251,8 @@ class pronote extends eqLogic {
         $replace['#alerte#'] = ($erreur === '') ? ''
             : '<div class="pw-alert">'
             . '<i class="fas fa-exclamation-triangle"></i> ' . htmlspecialchars(substr($erreur, 0, 120)) . '</div>';
-        if ($erreur === '' && self::inHoliday()) {
-            $nh = self::nextHoliday();
+        if ($erreur === '' && self::inHoliday(null, $this)) {
+            $nh = self::nextHoliday($this);
             $replace['#alerte#'] = '<div class="pw-alert pw-info"><i class="fas fa-umbrella-beach"></i> '
                 . htmlspecialchars($nh ? $nh[2] : 'Vacances') . ' — synchronisation suspendue'
                 . ($nh ? ' jusqu\'au ' . date('d/m', $nh[1]) : '') . '</div>';
@@ -1027,6 +1263,13 @@ class pronote extends eqLogic {
             $sync = 'à ' . trim(substr($sync, 10));
         }
         $replace['#lastSync#'] = htmlspecialchars($sync);
+
+        /* Photo de profil (option) ou initiales, pour l'en-tête du widget. */
+        $nom = trim((string)$this->getConfiguration('student_name', '')) ?: $this->getName();
+        $replace['#avatar#'] = $this->hasPhoto()
+            ? '<img src="plugins/pronote/core/ajax/pronote.ajax.php?action=photo&id=' . (int)$this->getId() . '&t=' . (int)@filemtime($this->photoFile()) . '" alt="" />'
+            : htmlspecialchars(self::initials($nom));
+        $replace['#avatarHue#'] = (string)self::hue($nom);
 
         return template_replace($replace, getTemplate('core', $version, 'pronote.eqLogic', 'pronote'));
     }

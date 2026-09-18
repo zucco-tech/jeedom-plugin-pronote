@@ -43,15 +43,70 @@ l'authentification Pronote — à utiliser en premier en cas de problème.
 Les commandes sont créées automatiquement selon les cases cochées dans l'onglet
 Équipement. Décocher un bloc supprime ses commandes.
 
+Toujours présentes, sans connexion supplémentaire : période en cours (nom, fin,
+avancement, jours restants), fin de l'année scolaire, prochaines vacances telles
+que l'établissement les publie (nom, début, fin, jours restants).
+
+Pour les scénarios, quatre binaires passent à 1 quand quelque chose arrive :
+« Nouvelle note », « Moyenne en baisse » (une matière a perdu 0,5 point ou plus
+depuis la synchro précédente — le détail est dans « Matières en baisse »),
+« Cours annulé demain », « Devoir pour demain non fait ».
+
+## Panneau
+
+Configuration du plugin › Affichage › **Panneau « Pronote »** ajoute une page
+sous le menu Accueil : un onglet par élève, chiffres clés, alertes, emploi du
+temps sur deux semaines, devoirs jour par jour, moyennes par matière (barres
+élève / classe), dernières notes, vie scolaire, messagerie, cantine et lien
+d'abonnement agenda. Le bouton **Synchroniser** y déclenche une synchro de
+l'élève affiché.
+
+## Agenda (iCal)
+
+Chaque élève a un lien d'abonnement, visible dans sa fiche (section « Agenda »)
+et dans le panneau. À coller dans « S'abonner à un calendrier » de Google
+Agenda, Apple Calendrier, Outlook ou Thunderbird : cours (les annulés sont
+marqués), devoirs en journée entière, vacances de l'établissement. Rafraîchi
+par l'agenda toutes les 6 h environ, à jour à chaque synchronisation.
+
+Options en fin de lien : `&todo=1` (devoirs en tâches VTODO au lieu
+d'événements), `&vacances=0` (sans les vacances).
+
+Le lien contient la clé API du plugin : ne le partagez qu'avec les agendas de
+la famille. Elle se régénère dans Réglages › Système › Configuration › API.
+
+## Photo de profil
+
+Option **Récupérer la photo de profil** (Configuration du plugin › Données),
+désactivée par défaut. Si l'établissement la publie, elle remplace les
+initiales dans les widgets, la page du plugin et le panneau. Elle est stockée
+dans le dossier protégé du plugin, servie uniquement à un utilisateur connecté
+et supprimée avec l'élève.
+
+## Vacances : zone ou établissement
+
+La pause pendant les vacances peut suivre le calendrier officiel de la zone
+(A/B/C) ou celui que l'établissement publie dans Pronote (ponts, fermetures,
+vacances propres). Par défaut, l'établissement prime quand il existe ; réglage
+« Calendrier » dans la configuration du plugin.
+
 ## Tests
 
 ```
 sudo -u www-data php plugins/pronote/tests/run_tests.php
 ```
 
-37 vérifications sur l'installation réelle : création des commandes, blocs
-activables, cron et délai entre élèves, chemins d'erreur, rendu des widgets.
-Ajouter `KEEP_TEST_EQ=1` pour conserver l'équipement de test créé.
+80 vérifications sur l'installation réelle : création des commandes, blocs
+activables, cron et délai entre élèves, chemins d'erreur, widgets, panneau,
+vacances de l'établissement, matières en baisse. Ajouter `KEEP_TEST_EQ=1` pour
+conserver l'équipement de test créé.
+
+`tests/run_tests_integration.php` (113 vérifications, destructif, installation
+de test seulement) couvre en plus les endpoints AJAX, l'export iCal en HTTP
+réel, la photo, les `.htaccess`, le masquage des secrets et la suppression en
+cascade. `pytest tests/test_fetch.py` teste le script Python seul.
+
+Sécurité : voir `SECURITY.md`.
 
 ## Ce que le plugin ne fait pas
 

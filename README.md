@@ -15,13 +15,20 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
   cours), widget mobile dédié.
 - Commandes typées pour les scénarios : nouvelle note, cours annulé demain,
   devoir pour demain non fait.
-- Synchronisation par le cron Jeedom (pas de démon), repli après échec,
-  suspension pendant les vacances scolaires (calendrier officiel).
+- Synchronisation par le cron Jeedom (pas de démon), **4 connexions par jour**
+  à heures fixes, repli après échec, gel après suspension d'IP, pause pendant
+  les vacances (calendrier de l'établissement ou de la zone).
+- **Panneau** multi-élèves (semaine sur deux semaines, devoirs, moyennes par
+  matière, vie scolaire, messagerie, cantine) et **abonnement agenda iCal**.
+- Période en cours, prochaines vacances, matières en baisse, photo de profil
+  (option), messagerie et informations, menus avec labels.
+- Secrets chiffrés et **masqués côté navigateur**, dossiers protégés, revue de
+  sécurité : [SECURITY.md](SECURITY.md).
 
 Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
 [changelog.md](changelog.md) — licence : [GPL-3.0](LICENSE).
 Publication sur le Market Jeedom : [docs/dev/publier-sur-le-market.md](docs/dev/publier-sur-le-market.md).
-Comparaison avec ProJote : [docs/dev/comparaison-projote.md](docs/dev/comparaison-projote.md).
+Comparaison avec ProJote : [docs/dev/comparaison-projote.md](docs/dev/comparaison-projote.md) — sécurité : [SECURITY.md](SECURITY.md).
 
 ## Signaler un problème
 

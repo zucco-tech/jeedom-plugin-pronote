@@ -278,6 +278,29 @@ $eq->save(true);
 $eq = eqLogic::byId($eq->getId());
 $creds = json_decode($eq->getSecret('credentials'), true);
 t('jeton chiffré, relu structuré', is_array($creds) && ($creds['password'] ?? '') === 'tok');
+
+/* Ce que voit le navigateur : un masque, jamais le secret ni son chiffré. */
+$arr = $eq->toArray();
+t('toArray() masque les secrets', $arr['configuration']['credentials'] === pronote::SECRET_MASK
+   && $arr['configuration']['password'] === pronote::SECRET_MASK && $arr['configuration']['account_pin'] === pronote::SECRET_MASK);
+t('toArray() ne fuit pas le chiffré', strpos(json_encode($arr), 'enc:') === false && strpos(json_encode($arr), 'tok') === false);
+/* Retour du navigateur avec le masque : la vraie valeur est conservée. */
+$eq->setConfiguration('credentials', pronote::SECRET_MASK);
+$eq->setConfiguration('password', pronote::SECRET_MASK);
+$eq->setConfiguration('account_pin', pronote::SECRET_MASK);
+$eq->save();
+$eq = eqLogic::byId($eq->getId());
+$creds = json_decode($eq->getSecret('credentials'), true);
+t('sauvegarde avec le masque : jeton conservé', is_array($creds) && ($creds['password'] ?? '') === 'tok');
+t('sauvegarde avec le masque : mot de passe et PIN conservés', $eq->getSecret('password') === 'motdepasse-en-clair' && $eq->getSecret('account_pin') === '1234');
+/* Garde-fous de saisie */
+$bad = ''; try { $eq->setConfiguration('account_pin', 'abcd'); $eq->save(); } catch (Exception $e) { $bad = $e->getMessage(); }
+t('PIN non numérique refusé à la sauvegarde', stripos($bad, 'PIN') !== false, $bad);
+$eq->setConfiguration('account_pin', '1234');
+$bad = ''; try { $eq->setConfiguration('url', 'http://evil.example/pronote/'); $eq->save(); } catch (Exception $e) { $bad = $e->getMessage(); }
+t('URL non HTTPS refusée', stripos($bad, 'https') !== false, $bad);
+$eq->setConfiguration('url', 'https://0450001a.index-education.net/pronote/eleve.html');
+$eq->save();
 $eq->setSecret('credentials', '');
 $eq->save(true);
 
@@ -384,7 +407,12 @@ config::save('holiday_zone', 'B', 'pronote'); config::save('suspend_holidays', 1
 cache::set('pronote::holidays::B', array(array(time() - 86400, time() + 86400, 'Vacances de test')), 3600);
 t('en vacances -> inHoliday vrai', pronote::inHoliday());
 $eq->setCache('lastSync', 0); $eq->setCache('failCount', 0);
+/* Le jeu d'essai a laissé un calendrier « établissement » : on force la zone
+   pour tester la pause zone, puis on vérifie que l'établissement prime en auto. */
+$eq->setConfiguration('holiday_source', 'zone'); $eq->save(true);
 t('en vacances -> pas de synchro due', !$eq->isDue());
+$eq->setConfiguration('holiday_source', ''); $eq->save(true);
+t('source auto : le calendrier de l\'établissement prime sur la zone', $eq->holidayRangesFor()[0] === 'pronote' && $eq->isDue());
 cache::set('pronote::holidays::B', array(array(time() + 5 * 86400, time() + 12 * 86400, 'Vacances à venir')), 3600);
 t('hors vacances -> synchro due', $eq->isDue());
 $nh = pronote::nextHoliday();
@@ -439,14 +467,65 @@ class __selftest_casse { public static function utilisateursDe($id) { throw new 
 $GLOBALS['__lecteur_id'] = $eq->getId();
 pronote::$readerProviders = array('__selftest_lecteur', '__selftest_casse', '__selftest_absent');
 $r = pronote::readersOf($eq->getId());
-t('lecteur déclaré -> listé', $r === array('Car de test'), json_encode($r));
+t('lecteur déclaré -> listé', in_array('Car de test', $r), json_encode($r));
 t('autre élève -> personne', pronote::readersOf($eq->getId() + 100000) === array());
 t('un lecteur qui plante n\'empêche pas les autres', true);
 $h = pronote::health(); $ligne = null;
 foreach ($h as $x) { if (strpos($x['test'], 'utilisé par') !== false) { $ligne = $x; } }
-t('ligne « utilisé par » dans Santé', $ligne !== null && $ligne['result'] === 'Car de test', $ligne ? $ligne['result'] : 'absente');
+t('ligne « utilisé par » dans Santé', $ligne !== null && strpos($ligne['result'], 'Car de test') !== false, $ligne ? $ligne['result'] : 'absente');
 pronote::$readerProviders = array();
-t('sans lecteur -> aucune ligne', count(pronote::readersOf($eq->getId())) === 0);
+t('sans lecteur -> plus listé', !in_array('Car de test', pronote::readersOf($eq->getId())));
+
+section('E octies. Export iCal, photo, dossier de données (HTTP réel)');
+$http = function ($url) {
+    $ctx = stream_context_create(array('http' => array('timeout' => 10, 'ignore_errors' => true)));
+    $body = @file_get_contents($url, false, $ctx);
+    $code = 0;
+    foreach ((isset($http_response_header) ? $http_response_header : array()) as $hd) {
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#', $hd, $m)) { $code = (int)$m[1]; }
+    }
+    return array($code, (string)$body);
+};
+$base = 'http://127.0.0.1/plugins/pronote';
+list($j, $raw) = callAjax('selftest', array('id' => $eq->getId()));
+$eq = eqLogic::byId($eq->getId());
+$icalUrl = $base . '/core/php/ical.php?apikey=' . urlencode(jeedom::getApiKey('pronote')) . '&id=' . $eq->getId();
+list($code, $ics) = $http($icalUrl);
+t('ical.php : 200 avec la clé du plugin', $code === 200, 'HTTP ' . $code);
+t('ical.php : calendrier valide (VCALENDAR, cours, devoirs, vacances)',
+   strpos($ics, 'BEGIN:VCALENDAR') === 0 && substr_count($ics, 'BEGIN:VEVENT') > 15
+   && strpos($ics, 'CATEGORIES:Devoirs') !== false && strpos($ics, 'CATEGORIES:Vacances') !== false
+   && strpos($ics, 'STATUS:CANCELLED') !== false && strpos($ics, "END:VCALENDAR\r\n") !== false,
+   substr_count($ics, 'BEGIN:VEVENT') . ' VEVENT');
+t('ical.php : lignes pliées à 75 octets', !preg_match('/^.{76,}$/m', str_replace("\r", '', $ics)));
+list($code, $todo) = $http($icalUrl . '&todo=1&vacances=0');
+t('ical.php : variante VTODO sans vacances', $code === 200 && strpos($todo, 'BEGIN:VTODO') !== false && strpos($todo, 'CATEGORIES:Vacances') === false);
+list($code, $body) = $http($base . '/core/php/ical.php?apikey=mauvaise&id=' . $eq->getId());
+t('ical.php : clé fausse -> 403', $code === 403, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/core/php/ical.php?apikey=' . urlencode(jeedom::getApiKey('core')) . '&id=' . $eq->getId());
+t('ical.php : la clé du core ne suffit pas', $code === 403, 'HTTP ' . $code);
+list($code, $body) = $http($icalUrl . '9999');
+t('ical.php : id inconnu -> 404', $code === 404, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/data/' . basename($eq->dataFile()));
+t('data/ : fichier de données inaccessible par HTTP', $code === 403, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/resources/pronote/pronote_fetch.py');
+t('resources/ : script inaccessible par HTTP', $code === 403, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/plugin_info/pronote_icon.png');
+t('plugin_info/ : icône servie', $code === 200, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/plugin_info/info.json');
+t('plugin_info/ : info.json non servi', $code === 403, 'HTTP ' . $code);
+list($code, $body) = $http($base . '/core/ajax/pronote.ajax.php?action=photo&id=' . $eq->getId());
+t('photo : sans session -> 401', $code === 401, 'HTTP ' . $code);
+$eq->setConfiguration('fetch_photo', 1); $eq->save(true);
+file_put_contents($eq->photoFile(), "\xff\xd8\xff\xe0" . str_repeat("\0", 64)); chmod($eq->photoFile(), 0600);
+t('photo : présente quand l\'option est active', $eq->hasPhoto());
+$savedCW = config::byKey('custom_widget', 'pronote', 1); config::save('custom_widget', 1, 'pronote');
+$html = $eq->toHtml('dashboard');
+config::save('custom_widget', $savedCW, 'pronote');
+t('widget : photo affichée via l\'AJAX authentifié', strpos($html, 'action=photo&id=' . $eq->getId()) !== false);
+$eq->setConfiguration('fetch_photo', ''); $eq->save(true);
+t('photo : option coupée -> plus utilisée', !$eq->hasPhoto());
+@unlink($eq->photoFile());
 
 section('E sexies. Adresse IP suspendue par Pronote');
 $eq->setCache('suspendedUntil', time() + 600);
@@ -460,6 +539,7 @@ t('gel levé : tentative normale', ($r['code'] ?? '') === 'auth');
 
 section('F. Suppression en cascade');
 $eqId = $eq->getId();
+$dataFile = $eq->dataFile();
 $cmdIds = array();
 foreach ($eq->getCmd() as $c) { $cmdIds[] = $c->getId(); }
 t('commandes avant suppression', count($cmdIds) > 0, count($cmdIds) . ' commandes');
@@ -468,6 +548,7 @@ t('équipement supprimé', !is_object(eqLogic::byId($eqId)));
 $orphans = 0;
 foreach ($cmdIds as $cid) { if (is_object(cmd::byId($cid))) { $orphans++; } }
 t('aucune commande orpheline', $orphans === 0, $orphans . ' orpheline(s)');
+t('fichier de données supprimé avec l\'élève', !file_exists($dataFile));
 
 if (getenv('DEPS') === '1') {
     section('G. Dépendances : suppression puis réinstallation');

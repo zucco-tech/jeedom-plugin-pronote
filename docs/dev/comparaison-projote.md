@@ -1,5 +1,13 @@
 # Pronote (ce plugin) et ProJote : comparaison
 
+> **Mise à jour 18/09/2026, version 1.1.0-beta.1.** La plupart des manques
+> relevés ci-dessous ont été comblés le jour même : panneau multi-élèves,
+> export iCal, période en cours et vacances publiées par l'établissement,
+> matières en baisse, messagerie et informations, labels de cantine, photo
+> de profil, compatibilité Python 3.9, CI GitHub. Le tableau original est
+> conservé tel quel comme point de départ ; la section « Où en est-on » en
+> fin de document fait le bilan.
+
 Établie le 18/09/2026 à partir du code de
 [ProJote 1.4.1](https://github.com/Aldarande/ProJote) (dépôt public, AGPL v3,
 auteur Aldarande, stable sur le Market depuis mai 2026, actif depuis mai 2024)
@@ -92,3 +100,26 @@ Trois pistes, non exclusives :
    iCal (une route PHP), la période en cours et les vacances telles que
    publiées par Pronote (déjà dans `listeJoursFeries`), le gestionnaire de
    Python 3.9 pour les Raspberry sous bullseye.
+
+## Où en est-on (1.1.0-beta.1)
+
+| Manque relevé | État |
+|---|---|
+| Panneau desktop multi-élèves | ✅ `desktop/php/panel.php`, deux semaines de cours, devoirs, matières, vie scolaire, messagerie, cantine |
+| Export iCalendar | ✅ cours + devoirs + vacances, VEVENT ou VTODO, clé du plugin |
+| Période en cours, bornes de l'année | ✅ commandes, barre d'avancement |
+| Vacances publiées par Pronote | ✅ commandes + pause de synchro sur ce calendrier (source auto/établissement/zone) |
+| Statistiques / matières en baisse | ✅ « Matières en baisse » + événement ; courbes : historisation native Jeedom des moyennes (générale, classe, par matière) |
+| Messagerie, notifications | ✅ objets, expéditeurs, non lus ; informations et sondages |
+| Allergènes / labels cantine | ✅ labels alimentaires, menus de la semaine |
+| Photo de profil | ✅ option, off par défaut, servie par AJAX authentifié |
+| Python 3.9 (Debian 11) | ✅ CI sur 3.9 / 3.11 / 3.13 |
+| CI, tests unitaires Python | ✅ workflow GitHub, `pytest` |
+| Audit de sécurité | ✅ `SECURITY.md` + durcissements (masquage des secrets, fichiers 0600, `.htaccess`, validations) |
+| Jeton de secours | ✅ autrement : le jeton renouvelé est renvoyé et sauvegardé même si la collecte échoue |
+| Webhooks | ✗ volontairement : les scénarios Jeedom font ce travail |
+| Rang dans la classe | ✗ pronotepy ne l'expose pas (ni ProJote) |
+
+Ce qui reste propre à Pronote et absent de ProJote : aucun démon, 4 connexions
+par jour, gel après suspension d'IP, pause vacances, widget agenda, décodage du
+QR côté serveur, secrets masqués côté navigateur, lecteurs inter-plugins.
