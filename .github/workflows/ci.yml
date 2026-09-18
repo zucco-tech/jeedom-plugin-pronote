@@ -40,6 +40,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r resources/pronote/requirements.txt pytest
+          pip install -r resources/pronote/requirements-qr.txt || echo "::warning::décodage QR indisponible sur ce Python (attendu en 3.9)"
       - name: Compilation et jeu d'essai
         run: |
           python -m py_compile resources/pronote/pronote_fetch.py

@@ -826,7 +826,8 @@ def decode_qr(path):
     try:
         import zxingcpp
     except ImportError as exc:
-        fail("deps", "zxing-cpp introuvable dans le venv : {}".format(exc))
+        fail("deps", "Décodage d'image indisponible sur cette installation (zxing-cpp absent : {}). "
+                     "Coller le contenu du QR Code dans le champ texte à la place.".format(exc))
 
     try:
         image = Image.open(path)

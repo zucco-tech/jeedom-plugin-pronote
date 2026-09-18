@@ -1,0 +1,7 @@
+# Décodage de l'image du QR Code fourni par Pronote — optionnel.
+# zxing-cpp est livré en wheel autonome (pas de libzbar) pour Python >= 3.10 ;
+# sur 3.9 (Debian 11) pip tente de compiler : cmake est alors nécessaire, sinon
+# le plugin fonctionne sans, en collant le contenu du QR Code.
+zxing-cpp>=2.2,<3; python_version < "3.10"
+zxing-cpp>=2.2; python_version >= "3.10"
+pillow>=10.0

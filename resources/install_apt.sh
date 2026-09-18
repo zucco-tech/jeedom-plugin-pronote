@@ -23,6 +23,13 @@ progress 55
 echo "--- Bibliothèques Python ---"
 "$BASEDIR/venv/bin/pip" install --upgrade pip
 "$BASEDIR/venv/bin/pip" install -r "$BASEDIR/pronote/requirements.txt"
+progress 80
+
+echo "--- Décodage d'image du QR Code (optionnel) ---"
+if ! "$BASEDIR/venv/bin/pip" install -r "$BASEDIR/pronote/requirements-qr.txt"; then
+  echo "AVERTISSEMENT : zxing-cpp/Pillow non installés (pas de wheel pour ce Python)."
+  echo "Le plugin fonctionne : coller le contenu du QR Code à la main au lieu de déposer l'image."
+fi
 progress 95
 
 echo "--- Vérification ---"
