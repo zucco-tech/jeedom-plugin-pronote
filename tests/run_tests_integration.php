@@ -94,6 +94,11 @@ t('enroll sans code -> refusé avant tout appel', ajaxError($j, $raw, '4 chiffre
 list($j, $raw) = callAjax('enroll', array('id' => $eq->getId(), 'qr' => 'pas du json', 'pin' => '1234'));
 t('enroll, QR illisible -> message sur le QR Code', ajaxError($j, $raw, 'QR Code'), ajaxMsg($j, $raw));
 
+list($j, $raw) = callAjax('homework_done', array('id' => $eq->getId(), 'homework' => '../x'));
+t('homework_done : identifiant invalide refusé avant tout appel', ajaxError($j, $raw, 'invalide'), ajaxMsg($j, $raw));
+list($j, $raw) = callAjax('homework_done', array('id' => $eq->getId(), 'homework' => 'hw-1', 'done' => 1));
+t('homework_done sans jeton -> message sur le jeton (Pronote non joint)', ajaxError($j, $raw, 'jeton'), ajaxMsg($j, $raw));
+
 list($j, $raw) = callAjax('nimportequoi');
 t('action inconnue -> message explicite', ajaxError($j, $raw, 'Aucune méthode'), ajaxMsg($j, $raw));
 

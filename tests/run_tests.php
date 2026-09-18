@@ -93,6 +93,13 @@ t('données structurées enregistrées (cours, devoirs, notes, vacances)',
    isset($store['_lessons'], $store['_homework'], $store['_grades'], $store['_holidays']) && count($store['_lessons']) > 10,
    isset($store['_lessons']) ? count($store['_lessons']) . ' cours, ' . count($store['_homework']) . ' devoirs' : 'absentes');
 t('fichier de données protégé (0600, .htaccess)', (fileperms($eq->dataFile()) & 0777) === 0600 && file_exists(pronote::dataDir() . '/.htaccess'));
+t('briefing du soir en français', preg_match('/^(Demain|Lundi|Mardi)/u', (string)$get('briefing_evening')) === 1 && strpos((string)$get('briefing_evening'), 'Léa') !== false, mb_substr((string)$get('briefing_evening'), 0, 70));
+t('briefing du matin', strpos((string)$get('briefing_morning'), 'Léa') !== false, mb_substr((string)$get('briefing_morning'), 0, 70));
+t('prochain contrôle et bilan hebdo', (string)$get('next_test') !== '' && strpos((string)$get('weekly_summary'), 'Moyenne générale') !== false, (string)$get('next_test'));
+t('dernier événement lisible', strpos((string)$get('last_event'), 'Nouvelle note') !== false, (string)$get('last_event'));
+$tomorrowIsSchool = (int)date('N', strtotime('+1 day')) <= 5;
+t('réveil demain cohérent avec le calendrier', $tomorrowIsSchool ? preg_match('/^\d{2}:\d{2}$/', (string)$get('wake_time_tomorrow')) === 1 : ((string)$get('wake_time_tomorrow') === '' && (int)$get('no_school_tomorrow') === 1),
+   'demain ' . ($tomorrowIsSchool ? 'école, réveil ' . $get('wake_time_tomorrow') : 'pas école'));
 t('première synchro : aucune matière en baisse', (string)$get('subjects_declining') === '' && (int)$get('avg_down_event') === 0);
 $again = $payload['data'];
 $again['_subjects'][0]['value'] = 13.9; // Mathématiques 15,2 -> 13,9
@@ -237,6 +244,12 @@ t('panneau rendu sans erreur', $ok, $ok ? strlen($panel) . ' octets' : $panel);
 t('panneau : élève, semaine, devoirs, matières', $ok && strpos($panel, 'AUTOTEST Pronote') !== false && strpos($panel, 'pnp-week') !== false
    && strpos($panel, 'pnp-subj') !== false && strpos($panel, 'pronote-hw') !== false);
 t('panneau : cours placés dans la grille', $ok && preg_match_all('/class="ev/', $panel) > 5);
+t('panneau : carte briefing et faits de demain', $ok && strpos($panel, 'pnp-brief') !== false && strpos($panel, 'réveil demain') !== false);
+t('panneau : pas de case « fait » sans jeton (écriture impossible)', $ok && strpos($panel, 'class="chk pnp-hwchk"') === false);
+$eq->setConfiguration('hide_grades', 1); $eq->save(true);
+$discret = $eq->toHtml('dashboard');
+t('mode discret : moyenne masquée sur le widget', strpos($discret, '•••') !== false && strpos($discret, '14,7') === false);
+$eq->setConfiguration('hide_grades', 0); $eq->save(true);
 t('panneau : rien d\'échappé à moitié (pas de #placeholder#)', $ok && !preg_match('/#[a-zA-Z_]+#/', $panel));
 
 section('8 ter. Vacances selon l\'établissement');

@@ -4,6 +4,25 @@
 Objectif : dépasser ce qu'offre ProJote tout en gardant ce qui fait la
 différence (aucun démon, 4 connexions par jour, agenda).
 
+### La maison qui parle (ce que ProJote ne fait pas)
+- **Briefing du soir** et **du matin** en français naturel, prêts pour une
+  synthèse vocale ou une notification : heures de début et de fin, premier
+  cours, cours annulés, contrôles, sport (tenue), devoirs non faits, cantine ;
+  le vendredi soir, la reprise du lundi.
+- **Heure de réveil demain** (premier cours moins une avance réglable),
+  premier / dernier cours, « pas de cours demain », « sport demain »,
+  « contrôle demain », prochain contrôle, matières de demain.
+- **Dernier événement (texte)** et **bilan de la semaine (texte)** pour les
+  notifications et le dimanche soir.
+- **Tendance de la moyenne** sur 30 jours (historique Jeedom) et courbe sur
+  90 jours dans le panneau, avec la moyenne de classe en pointillé.
+- **Écriture dans Pronote** : cocher un devoir « fait » depuis le panneau le
+  coche dans Pronote (`Homework.set_done`), en une connexion qui rafraîchit
+  aussi les données.
+- **Mode discret** par élève : widgets sans moyenne ni matières en baisse.
+- Pastilles « contrôle demain » et « sport demain » sur le widget ; briefing
+  sur le widget mobile.
+
 ### Panneau « Pronote » (menu Accueil)
 - Page dédiée pour tous les élèves, activable dans la configuration du plugin :
   chiffres clés (moyenne / classe, devoirs, absences, période en cours avec sa

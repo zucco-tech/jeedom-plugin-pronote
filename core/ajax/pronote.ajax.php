@@ -68,6 +68,22 @@ try {
         ajax::success($payload);
     }
 
+    /* Écriture dans Pronote : cocher / décocher un devoir. Une connexion,
+       qui rafraîchit aussi toutes les données de l'élève. */
+    if (init('action') == 'homework_done') {
+        $eqLogic = $student();
+        $hwId = trim((string)init('homework'));
+        if ($hwId === '' || strlen($hwId) > 64 || !preg_match('/^[A-Za-z0-9#_\-]+$/', $hwId)) {
+            throw new Exception(__('Identifiant de devoir invalide', __FILE__));
+        }
+        $payload = $eqLogic->synchronize(array('action' => array(
+            'type' => 'homework_done', 'id' => $hwId, 'done' => (init('done', 1) == 1))));
+        if (!isset($payload['ok']) || $payload['ok'] !== true) {
+            throw new Exception($payload['error']);
+        }
+        ajax::success(array('done' => (init('done', 1) == 1)));
+    }
+
     if (init('action') == 'enroll') {
         $eqLogic = $student();
         $qr = json_decode(init('qr'), true);

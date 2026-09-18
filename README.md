@@ -18,6 +18,9 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
 - Synchronisation par le cron Jeedom (pas de démon), **4 connexions par jour**
   à heures fixes, repli après échec, gel après suspension d'IP, pause pendant
   les vacances (calendrier de l'établissement ou de la zone).
+- **La maison qui parle** : briefings du soir et du matin en français (TTS,
+  notifications), heure de réveil, sport / contrôle demain, dernier événement,
+  bilan hebdo. **Cocher un devoir « fait » depuis Jeedom écrit dans Pronote.**
 - **Panneau** multi-élèves (semaine sur deux semaines, devoirs, moyennes par
   matière, vie scolaire, messagerie, cantine) et **abonnement agenda iCal**.
 - Période en cours, prochaines vacances, matières en baisse, photo de profil

@@ -104,7 +104,7 @@ class pronote extends eqLogic {
     const PLUGIN_SETTINGS = array(
         'sync_mode' => 'times', 'sync_times' => '06:30,12:00,16:30,20:00', 'frequency' => 30,
         'homework_days' => 7, 'per_subject' => 0, 'skip_done' => 0, 'device_name' => 'Jeedom',
-        'fetch_photo' => 0, 'holiday_source' => 'auto',
+        'fetch_photo' => 0, 'holiday_source' => 'auto', 'wake_lead' => 75,
     );
 
     /** Heures fixes de synchronisation (minutes depuis minuit), triées, dédoublonnées. */
@@ -509,7 +509,7 @@ class pronote extends eqLogic {
      * Appelle le script Python et applique le résultat aux commandes.
      * @return array le payload décodé (pour l'affichage dans l'IHM).
      */
-    public function synchronize() {
+    public function synchronize($_extra = array()) {
         /* Verrou : une synchro manuelle qui chevauche le cron ferait deux
            connexions avec le même jeton — la seconde échoue et peut
            l'invalider. */
@@ -521,7 +521,7 @@ class pronote extends eqLogic {
         cache::set($lockKey, 1, 180);
 
         try {
-            $payload = $this->runFetch();
+            $payload = $this->runFetch($_extra);
         } finally {
             cache::set($lockKey, 0, 1);
         }
@@ -613,6 +613,7 @@ class pronote extends eqLogic {
             'skip_done'   => ($this->setting('skip_done') == 1),
             'data'        => $this->enabledData(),
             'photo_path'  => ($this->setting('fetch_photo') == 1) ? $this->photoFile() : '',
+            'wake_lead'   => (int)$this->setting('wake_lead'),
             'log_level'   => config::byKey('log_level', 'pronote', 'info'),
         ), $extra);
 
@@ -793,6 +794,23 @@ class pronote extends eqLogic {
             $evt = $this->getCmd(null, 'avg_down_event');
             if (is_object($evt)) {
                 $evt->event(count($down) ? 1 : 0);
+            }
+        }
+
+        /* Tendance : moyenne générale d'aujourd'hui moins celle d'il y a 30 jours,
+           lue dans l'historique Jeedom de la commande (rien à stocker de plus). */
+        $avgCmd = $this->getCmd(null, 'avg_general');
+        $trendCmd = $this->getCmd(null, 'avg_trend');
+        if (is_object($avgCmd) && is_object($trendCmd) && isset($data['avg_general']) && $data['avg_general'] !== '') {
+            try {
+                $from = date('Y-m-d H:i:s', time() - 30 * 86400);
+                $rows = history::all($avgCmd->getId(), $from, date('Y-m-d H:i:s', time() - 25 * 86400));
+                if (is_array($rows) && count($rows)) {
+                    $past = (float)$rows[0]->getValue();
+                    $trendCmd->event(round((float)$data['avg_general'] - $past, 1));
+                }
+            } catch (Throwable $e) {
+                log::add('pronote', 'debug', 'tendance : ' . $e->getMessage());
             }
         }
 
@@ -1025,6 +1043,10 @@ class pronote extends eqLogic {
             array('next_holiday_start', 'Début des prochaines vacances', 'info', 'string', '', 0, 0, 'core'),
             array('next_holiday_end',   'Fin des prochaines vacances', 'info', 'string',  '',    0, 0, 'core'),
             array('days_to_holiday',    'Jours avant les vacances', 'info',   'numeric', 'j',   0, 0, 'core'),
+            array('briefing_evening',   'Briefing du soir (demain)', 'info',  'string',  '',    0, 0, 'core'),
+            array('briefing_morning',   'Briefing du matin (aujourd\'hui)', 'info', 'string', '', 0, 0, 'core'),
+            array('last_event',         'Dernier événement (texte)', 'info',  'string',  '',    0, 0, 'core'),
+            array('weekly_summary',     'Bilan de la semaine (texte)', 'info', 'string', '',    0, 0, 'core'),
 
             array('avg_general',        'Moyenne générale',         'info',   'numeric', '/20', 1, 1, 'notes'),
             array('avg_class',          'Moyenne de la classe',     'info',   'numeric', '/20', 1, 0, 'notes'),
@@ -1034,6 +1056,7 @@ class pronote extends eqLogic {
             array('grades_html',        'Dernières notes (détail)', 'info',   'string',  '',    0, 0, 'notes'),
             array('subjects_declining', 'Matières en baisse',       'info',   'string',  '',    0, 0, 'notes'),
             array('avg_down_event',     'Moyenne en baisse (événement)', 'info', 'binary', '', 1, 0, 'notes'),
+            array('avg_trend',          'Tendance de la moyenne (30 j)', 'info', 'numeric', 'pt', 1, 0, 'notes'),
 
             array('homework_count',     'Devoirs à faire',          'info',   'numeric', '',    1, 1, 'devoirs'),
             array('homework_tomorrow',  'Devoirs pour demain',      'info',   'numeric', '',    0, 1, 'devoirs'),
@@ -1047,6 +1070,14 @@ class pronote extends eqLogic {
             array('timetable_week_html', 'Emploi du temps (7 jours)', 'info', 'string', '', 0, 0, 'edt'),
             array('course_cancelled',   'Cours annulé aujourd\'hui','info',   'binary',  '',    1, 1, 'edt'),
             array('course_cancelled_tomorrow', 'Cours annulé demain', 'info', 'binary', '',    1, 0, 'edt'),
+            array('first_course_tomorrow', 'Premier cours demain',  'info',   'string',  '',    0, 0, 'edt'),
+            array('last_course_tomorrow', 'Fin des cours demain',   'info',   'string',  '',    0, 0, 'edt'),
+            array('wake_time_tomorrow', 'Heure de réveil demain',   'info',   'string',  '',    0, 0, 'edt'),
+            array('no_school_tomorrow', 'Pas de cours demain',      'info',   'binary',  '',    0, 0, 'edt'),
+            array('sport_tomorrow',     'Sport demain',             'info',   'binary',  '',    0, 0, 'edt'),
+            array('subjects_tomorrow',  'Matières de demain',       'info',   'string',  '',    0, 0, 'edt'),
+            array('test_tomorrow',      'Contrôle demain',          'info',   'binary',  '',    1, 0, 'edt'),
+            array('next_test',          'Prochain contrôle',        'info',   'string',  '',    0, 0, 'edt'),
 
             array('absences',           'Absences de la période',   'info',   'numeric', 'h',   1, 1, 'absences'),
             array('delays',             'Retards de la période',    'info',   'numeric', '',    1, 1, 'absences'),
@@ -1149,7 +1180,8 @@ class pronote extends eqLogic {
            note » : afficher 0/20 en début d'année serait un mensonge. */
         $moyenne = $get('avg_general', '');
         $aDesNotes = ($get('last_grade', '') !== '');
-        $replace['#moyenne#'] = ($moyenne === '' || !$aDesNotes) ? '—' : str_replace('.', ',', (string)$moyenne);
+        $discret = ($this->getConfiguration('hide_grades', 0) == 1);
+        $replace['#moyenne#'] = $discret ? '•••' : (($moyenne === '' || !$aDesNotes) ? '—' : str_replace('.', ',', (string)$moyenne));
         $replace['#devoirsNb#'] = (string)$get('homework_count', '0');
         $absences = $get('absences', '0');
         $replace['#absences#'] = (is_numeric($absences) ? rtrim(rtrim(number_format((float)$absences, 1, ',', ''), '0'), ',') : $absences) . ' h';
@@ -1167,6 +1199,12 @@ class pronote extends eqLogic {
             $n = (int)$get('new_grades');
             $badges[] = $pill($n . ($n > 1 ? ' nouvelles notes' : ' nouvelle note'), 'var(--al-info-color)');
         }
+        if ((int)$get('test_tomorrow', 0) == 1) {
+            $badges[] = $pill('contrôle demain', 'var(--al-warning-color)');
+        }
+        if ((int)$get('sport_tomorrow', 0) == 1) {
+            $badges[] = $pill('sport demain', 'var(--al-info-color)');
+        }
         if ((int)$get('new_messages', 0) > 0) {
             $badges[] = $pill((int)$get('new_messages') . ' message(s)', 'var(--al-info-color)');
         }
@@ -1179,7 +1217,7 @@ class pronote extends eqLogic {
         if ((int)$get('absences_unjustified', 0) > 0) {
             $badges[] = $pill((int)$get('absences_unjustified') . ' absence(s) non justifiée(s)', 'var(--al-danger-color)');
         }
-        if (trim((string)$get('subjects_declining', '')) !== '') {
+        if (!$discret && trim((string)$get('subjects_declining', '')) !== '') {
             $badges[] = $pill('en baisse : ' . $get('subjects_declining'), 'var(--al-warning-color)');
         }
         $nhs = (string)$get('next_holiday_start', '');
@@ -1245,6 +1283,8 @@ class pronote extends eqLogic {
         $ncs = trim((string)$get('next_course_start', ''));
         $replace['#nextLabel#'] = ($ncs !== '' ? 'Prochain cours · ' . htmlspecialchars($ncs) : 'Prochain cours');
         $replace['#nextCourse#'] = htmlspecialchars($nc !== '' ? $nc : 'Aucun cours à venir');
+        $briefing = trim((string)$get(date('G') >= 15 ? 'briefing_evening' : 'briefing_morning', ''));
+        $replace['#briefing#'] = $briefing === '' ? '' : '<div class="pw-brief"><i class="fas fa-comment-dots"></i> ' . htmlspecialchars($briefing) . '</div>';
 
         /* Bandeau d'erreur : un jeton expiré doit se voir sans ouvrir les logs. */
         $erreur = (string)$this->getCache('lastError', '');

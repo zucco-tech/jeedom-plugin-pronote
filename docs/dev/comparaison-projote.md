@@ -120,6 +120,12 @@ Trois pistes, non exclusives :
 | Webhooks | ✗ volontairement : les scénarios Jeedom font ce travail |
 | Rang dans la classe | ✗ pronotepy ne l'expose pas (ni ProJote) |
 
+Ce que Pronote fait et que ProJote ne fait pas du tout : **briefings en
+français pour la voix** (soir, matin, bilan hebdo, dernier événement), **heure
+de réveil et faits de demain** (sport, contrôle, pas de cours), **écriture dans
+Pronote** (cocher un devoir fait), **tendance de la moyenne** et courbe,
+**mode discret**.
+
 Ce qui reste propre à Pronote et absent de ProJote : aucun démon, 4 connexions
 par jour, gel après suspension d'IP, pause vacances, widget agenda, décodage du
 QR côté serveur, secrets masqués côté navigateur, lecteurs inter-plugins.

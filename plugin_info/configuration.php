@@ -106,6 +106,13 @@ if (!isConnect('admin')) {
       </div>
     </div>
     <div class="form-group">
+      <label class="col-sm-3 control-label">{{Réveil : avance sur le premier cours}}</label>
+      <div class="col-sm-2">
+        <input type="number" min="15" max="240" class="configKey form-control" data-l1key="wake_lead" value="75" />
+      </div>
+      <div class="col-sm-6"><span class="help-block">{{Minutes entre l'heure de réveil calculée et le premier cours du lendemain (commande « Heure de réveil demain », pour un scénario de réveil ou le briefing du soir).}}</span></div>
+    </div>
+    <div class="form-group">
       <label class="col-sm-3 control-label">{{Nom de l'appareil}}</label>
       <div class="col-sm-3">
         <input type="text" class="configKey form-control" data-l1key="device_name" placeholder="Jeedom" maxlength="32" />

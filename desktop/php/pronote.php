@@ -394,11 +394,11 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                                    'vie' => 'fa-comment', 'punitions' => 'fa-gavel', 'cantine' => 'fa-utensils', 'competences' => 'fa-award');
                     $descr = array('notes' => 'Moyenne générale, moyenne de classe, dernière note, nouvelles notes',
                                    'devoirs' => 'À faire, pour demain, détail',
-                                   'edt' => 'Journée, lendemain, semaine, prochain cours, annulations',
-                                   'absences' => 'Heures manquées et retards de la période',
-                                   'vie' => 'Messages non lus',
+                                   'edt' => 'Deux semaines, prochain cours, annulations, contrôles, réveil, sport demain',
+                                   'absences' => 'Heures manquées, retards, détail et non justifiées',
+                                   'vie' => 'Messagerie, informations et sondages',
                                    'punitions' => 'Nombre sur la période',
-                                   'cantine' => 'Menu du jour',
+                                   'cantine' => 'Menus de la semaine avec labels',
                                    'competences' => 'Évaluations par compétences');
                     foreach (pronote::dataBlocks() as $key => $label) { ?>
                       <label class="pn-opt">
@@ -409,6 +409,8 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                     <?php } ?>
                   </div>
                   <span class="help-block" style="margin-top:8px">{{Les commandes suivent ces cases : en décocher une supprime ses commandes (et leur historique) à la sauvegarde.}}</span>
+                  <label class="checkbox-inline" style="display:block;margin:10px 0 0"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="hide_grades" /> {{Mode discret}} <span class="help-block" style="display:inline;margin-left:6px">{{— les widgets n'affichent ni la moyenne ni les matières en baisse (écran partagé, visiteurs) ; le panneau et les commandes restent complets}}</span></label>
+                  <span class="help-block" style="margin-top:8px">{{Toujours produits, quels que soient les blocs : briefing du soir et du matin en français (pour une synthèse vocale), heure de réveil, dernier événement, bilan de la semaine — voir l'onglet Commandes.}}</span>
                 </div>
               </div>
 

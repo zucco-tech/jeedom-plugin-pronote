@@ -305,7 +305,215 @@ def collect(client, req, data):
     if req.get("photo_path"):
         safe("photo", lambda: collect_photo(client, req["photo_path"], data))
 
+    # Briefings, réveil, bilan : dérivés de ce qui vient d'être collecté.
+    safe("briefing", lambda: build_briefings(data, req, now))
+
     return data
+
+
+# --------------------------------------------------------------------------
+# Écriture dans Pronote (actions déclenchées depuis Jeedom)
+# --------------------------------------------------------------------------
+
+def run_action(client, req, data):
+    """Exécute l'action demandée AVANT la collecte, pour que les données
+    renvoyées reflètent déjà le changement. Une seule action par appel."""
+    action = req.get("action") or {}
+    kind = action.get("type")
+    if not kind:
+        return
+    if kind == "homework_done":
+        wanted = str(action.get("id", ""))
+        done = bool(action.get("done", True))
+        today = datetime.date.today()
+        found = None
+        for h in client.homework(today - datetime.timedelta(days=7), today + datetime.timedelta(days=30)):
+            if str(getattr(h, "id", "")) == wanted:
+                found = h
+                break
+        if found is None:
+            fail("config", "Devoir introuvable dans Pronote (déjà retiré ou hors période)")
+        found.set_done(done)
+        data["_action"] = {"type": kind, "id": wanted, "done": done, "ok": True}
+        return
+    fail("config", "Action inconnue : {}".format(kind))
+
+
+# --------------------------------------------------------------------------
+# Briefings en français, heure de réveil, bilan de la semaine
+# --------------------------------------------------------------------------
+
+SPORT_WORDS = ("eps", "sport", "éducation physique", "education physique", "natation", "piscine")
+
+
+def _lessons_on(data, day):
+    return [l for l in data.get("_lessons", []) if l.get("date") == day.isoformat()]
+
+
+def _h(hhmm):
+    """« 08:10 » -> « 8h10 », « 14:00 » -> « 14h »."""
+    if not hhmm or ":" not in hhmm:
+        return ""
+    h, m = hhmm.split(":")
+    return "{}h{}".format(int(h), m if m != "00" else "")
+
+
+def _liste(items):
+    items = [i for i in items if i]
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + " et " + items[-1]
+
+
+def build_briefings(data, req, now):
+    today = now.date()
+    tomorrow = today + datetime.timedelta(days=1)
+    first_name = ((data.get("_meta") or {}).get("name") or req.get("child_name") or "").strip().split(" ")[0] or "l'élève"
+    lead = int(req.get("wake_lead") or 75)
+
+    def day_facts(day):
+        lessons = [l for l in _lessons_on(data, day)]
+        active = [l for l in lessons if not l.get("cancelled")]
+        active.sort(key=lambda l: l.get("start", ""))
+        facts = {
+            "lessons": lessons, "active": active,
+            "first": active[0]["start"] if active else "",
+            "last": (active[-1].get("end") or active[-1]["start"]) if active else "",
+            "subjects": [],
+            "cancelled": [l["subject"] for l in lessons if l.get("cancelled")],
+            "tests": [l["subject"] for l in lessons if l.get("test") and not l.get("cancelled")],
+            "sport": any(any(w in (l.get("subject") or "").lower() for w in SPORT_WORDS) for l in active),
+        }
+        for l in active:
+            if l["subject"] not in facts["subjects"]:
+                facts["subjects"].append(l["subject"])
+        return facts
+
+    def pending_homework(day):
+        return [h for h in data.get("_homework", []) if h.get("date") == day.isoformat() and not h.get("done")]
+
+    # ---- demain : commandes brutes
+    t = day_facts(tomorrow)
+    data["first_course_tomorrow"] = _h(t["first"])
+    data["last_course_tomorrow"] = _h(t["last"])
+    data["no_school_tomorrow"] = 0 if t["active"] else 1
+    data["sport_tomorrow"] = 1 if t["sport"] else 0
+    data["subjects_tomorrow"] = ", ".join(t["subjects"])
+    data["test_tomorrow"] = 1 if t["tests"] else 0
+    if t["first"]:
+        h, m = t["first"].split(":")
+        wake = datetime.datetime.combine(tomorrow, datetime.time(int(h), int(m))) - datetime.timedelta(minutes=lead)
+        data["wake_time_tomorrow"] = wake.strftime("%H:%M")
+    else:
+        data["wake_time_tomorrow"] = ""
+
+    # ---- prochain contrôle (14 jours)
+    upcoming_tests = [l for l in data.get("_lessons", [])
+                      if l.get("test") and not l.get("cancelled") and l.get("date", "") >= today.isoformat()]
+    upcoming_tests.sort(key=lambda l: (l.get("date", ""), l.get("start", "")))
+    if upcoming_tests:
+        nt = upcoming_tests[0]
+        d = datetime.date.fromisoformat(nt["date"])
+        data["next_test"] = "{} — {}".format(nt["subject"], jour_relatif(d, today))
+    else:
+        data["next_test"] = ""
+
+    # ---- briefing du soir (pour demain)
+    parts = []
+    if not t["active"]:
+        parts.append("Demain, pas de cours pour {}.".format(first_name))
+        # Le prochain jour de classe, pour ne pas laisser le vendredi soir sans info.
+        for i in range(2, 8):
+            d = today + datetime.timedelta(days=i)
+            f = day_facts(d)
+            if f["active"]:
+                parts.append("{}, reprise à {} par {}{}.".format(
+                    jour_relatif(d, today).capitalize(), _h(f["first"]), f["active"][0]["subject"],
+                    " — il y a sport" if f["sport"] else ""))
+                hw2 = pending_homework(d)
+                if hw2:
+                    parts.append("{} à faire d'ici là : {}.".format(
+                        "Un devoir" if len(hw2) == 1 else "{} devoirs".format(len(hw2)), _liste([h["subject"] for h in hw2])))
+                break
+    else:
+        parts.append("Demain, {} commence à {} par {} et finit à {}.".format(
+            first_name, _h(t["first"]), t["active"][0]["subject"], _h(t["last"])))
+        if t["cancelled"]:
+            parts.append("Cours annulé : {}.".format(_liste(t["cancelled"])))
+        if t["tests"]:
+            parts.append("Contrôle de {}.".format(_liste(t["tests"])))
+        if t["sport"]:
+            parts.append("Il y a sport : penser à la tenue.")
+    hw = pending_homework(tomorrow)
+    if hw:
+        parts.append("{} à faire pour demain : {}.".format(
+            "Un devoir" if len(hw) == 1 else "{} devoirs".format(len(hw)), _liste([h["subject"] for h in hw])))
+    elif t["active"]:
+        parts.append("Aucun devoir en attente pour demain.")
+    if t["active"] and data.get("menu_tomorrow"):
+        parts.append("À la cantine : {}.".format(data["menu_tomorrow"][:120]))
+    data["briefing_evening"] = " ".join(parts)
+
+    # ---- briefing du matin (aujourd'hui)
+    a = day_facts(today)
+    parts = []
+    if not a["active"]:
+        parts.append("Pas de cours aujourd'hui pour {}.".format(first_name))
+    else:
+        parts.append("Aujourd'hui, {} commence à {} par {} et finit à {}.".format(
+            first_name, _h(a["first"]), a["active"][0]["subject"], _h(a["last"])))
+        if a["cancelled"]:
+            parts.append("Cours annulé : {}.".format(_liste(a["cancelled"])))
+        if a["tests"]:
+            parts.append("Contrôle de {}.".format(_liste(a["tests"])))
+        if a["sport"]:
+            parts.append("Sport au programme.")
+    hw = pending_homework(today)
+    if hw:
+        parts.append("Devoir non coché pour aujourd'hui : {}.".format(_liste([h["subject"] for h in hw])))
+    if a["active"] and data.get("menu_today"):
+        parts.append("Cantine : {}.".format(data["menu_today"][:120]))
+    data["briefing_morning"] = " ".join(parts)
+
+    # ---- dernier événement lisible (pour une notification)
+    events = []
+    if data.get("last_grade") and (data.get("new_grades") or 0) > 0:
+        events.append("Nouvelle note : {}".format(data["last_grade"]))
+    if data.get("course_cancelled_tomorrow"):
+        events.append("Cours annulé demain : {}".format(_liste(t["cancelled"])))
+    if data.get("homework_tomorrow_pending"):
+        events.append("Devoir pour demain non fait")
+    if (data.get("new_messages") or 0) > 0:
+        events.append("{} message(s) non lu(s)".format(data["new_messages"]))
+    if (data.get("absences_unjustified") or 0) > 0:
+        events.append("{} absence(s) non justifiée(s)".format(data["absences_unjustified"]))
+    data["last_event"] = " · ".join(events)
+
+    # ---- bilan de la semaine écoulée (7 jours) et à venir
+    week_ago = today - datetime.timedelta(days=7)
+    grades = [g for g in data.get("_grades", []) if g.get("date", "") >= week_ago.isoformat()]
+    parts = []
+    if grades:
+        parts.append("Cette semaine, {} note{} : {}.".format(
+            len(grades), "s" if len(grades) > 1 else "",
+            _liste(["{} {}/{:g}".format(g["subject"], str(g["value"]).replace(".0", "").replace(".", ","), g["out_of"]) for g in grades[:5]])))
+    else:
+        parts.append("Pas de nouvelle note cette semaine.")
+    if data.get("avg_general") not in (None, ""):
+        parts.append("Moyenne générale : {} sur 20.".format(str(data["avg_general"]).replace(".", ",")))
+    if data.get("absences_unjustified"):
+        parts.append("{} absence(s) non justifiée(s) sur la période.".format(data["absences_unjustified"]))
+    next_week = [l for l in upcoming_tests if l.get("date", "") <= (today + datetime.timedelta(days=7)).isoformat()]
+    if next_week:
+        parts.append("Contrôles à venir : {}.".format(_liste(sorted(set(
+            "{} {}".format(l["subject"], jour_relatif(datetime.date.fromisoformat(l["date"]), today)) for l in next_week)))))
+    pend = [h for h in data.get("_homework", []) if not h.get("done")
+            and h.get("date", "") <= (today + datetime.timedelta(days=7)).isoformat()]
+    if pend:
+        parts.append("{} devoir{} à rendre dans la semaine.".format(len(pend), "s" if len(pend) > 1 else ""))
+    data["weekly_summary"] = " ".join(parts)
 
 
 # --------------------------------------------------------------------------
@@ -515,6 +723,7 @@ def collect_homework(client, data, req, now):
     for h in all_homework:
         hdate = getattr(h, "date", None)
         items.append({
+            "id": str(getattr(h, "id", "") or ""),
             "date": hdate.isoformat() if hdate else "",
             "subject": safe("hw.subject", lambda x=h: x.subject.name, "") or "",
             "description": (getattr(h, "description", "") or "").replace("\n", " ").strip()[:400],
@@ -927,7 +1136,9 @@ def selftest_payload():
         d = today + D(days=i)
         for j, (h1, m1, h2, m2, subj, teacher, room) in enumerate(week.get(d.weekday(), [])):
             cancelled = (i == cancel_day and j == 1)
-            lessons.append(lesson(d, h1, m1, h2, m2, subj, teacher, room, cancelled, "Prof. absent" if cancelled else ""))
+            l = lesson(d, h1, m1, h2, m2, subj, teacher, room, cancelled, "Prof. absent" if cancelled else "")
+            l.test = (i == cancel_day and j == 0)  # un contrôle le prochain jour de classe
+            lessons.append(l)
     by_day = {}
     for l in lessons:
         by_day.setdefault(l.start.date(), []).append(l)
@@ -947,11 +1158,11 @@ def selftest_payload():
 
     hw_dates = [next_school_day(1), next_school_day(2), next_school_day(4), next_school_day(8)]
     homework = [
-        {"date": hw_dates[0].isoformat(), "subject": "Mathématiques", "description": "Exercices 12 à 15 p. 84", "done": False},
-        {"date": hw_dates[0].isoformat(), "subject": "Anglais LV1", "description": "Apprendre le vocabulaire de l'unité 2", "done": True},
-        {"date": hw_dates[1].isoformat(), "subject": "Français", "description": "Lire le chapitre 3 et répondre aux questions", "done": False},
-        {"date": hw_dates[2].isoformat(), "subject": "Histoire-Géo", "description": "Fiche de révision : la Révolution française", "done": False},
-        {"date": hw_dates[3].isoformat(), "subject": "SVT", "description": "Compte rendu de TP", "done": False},
+        {"id": "hw-1", "date": hw_dates[0].isoformat(), "subject": "Mathématiques", "description": "Exercices 12 à 15 p. 84", "done": False},
+        {"id": "hw-2", "date": hw_dates[0].isoformat(), "subject": "Anglais LV1", "description": "Apprendre le vocabulaire de l'unité 2", "done": True},
+        {"id": "hw-3", "date": hw_dates[1].isoformat(), "subject": "Français", "description": "Lire le chapitre 3 et répondre aux questions", "done": False},
+        {"id": "hw-4", "date": hw_dates[2].isoformat(), "subject": "Histoire-Géo", "description": "Fiche de révision : la Révolution française", "done": False},
+        {"id": "hw-5", "date": hw_dates[3].isoformat(), "subject": "SVT", "description": "Compte rendu de TP", "done": False},
     ]
     hw_rows = []
     for h in homework:
@@ -1028,7 +1239,7 @@ def selftest_payload():
 
         "_lessons": [{"date": l.start.date().isoformat(), "start": l.start.strftime("%H:%M"), "end": l.end.strftime("%H:%M"),
                       "subject": l.subject.name, "room": l.classroom, "teacher": l.teacher_name, "status": l.status,
-                      "cancelled": l.canceled, "test": False} for l in lessons],
+                      "cancelled": l.canceled, "test": bool(getattr(l, "test", False))} for l in lessons],
         "timetable_html": lessons_html(by_day.get(today, [])),
         "timetable_tomorrow_html": lessons_html(by_day.get(today + D(days=1), [])),
         "timetable_week_html": "".join(days),
@@ -1050,6 +1261,7 @@ def selftest_payload():
         "menu_week_html": '<ul class="pronote-menu">' + menu_rows + "</ul>",
         "skills_html": "",
     }
+    build_briefings(data, {"child_name": "Léa", "wake_lead": 75}, now)
     return {"ok": True, "credentials": None, "warnings": ["jeu d'essai : aucune connexion à Pronote"], "data": data}
 
 
@@ -1093,6 +1305,7 @@ def main():
     # réponse « ok: false » qui porte quand même credentials et données partielles.
     data = {}
     try:
+        run_action(client, req, data)
         collect(client, req, data)
     except Exception as exc:
         print(traceback.format_exc(), file=sys.stderr)

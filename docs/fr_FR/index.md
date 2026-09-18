@@ -52,6 +52,53 @@ Pour les scénarios, quatre binaires passent à 1 quand quelque chose arrive :
 depuis la synchro précédente — le détail est dans « Matières en baisse »),
 « Cours annulé demain », « Devoir pour demain non fait ».
 
+## La maison qui parle : briefings, réveil, événements
+
+Quatre commandes texte sont produites à chaque synchronisation, quels que
+soient les blocs cochés — pensées pour une enceinte (TTS), une notification
+ou un écran :
+
+- **Briefing du soir (demain)** : « Demain, Cléa commence à 8h10 par
+  Histoire-Géo et finit à 16h30. Contrôle de Mathématiques. Il y a sport :
+  penser à la tenue. Un devoir à faire pour demain : Français. À la cantine :
+  lasagnes… ». Le vendredi soir, il annonce la reprise du lundi.
+- **Briefing du matin (aujourd'hui)** : même chose pour la journée.
+- **Dernier événement (texte)** : « Nouvelle note : Mathématiques 16/20 ·
+  Devoir pour demain non fait » — à envoyer tel quel sur un téléphone.
+- **Bilan de la semaine (texte)** : notes de la semaine, moyenne, absences non
+  justifiées, contrôles à venir, devoirs à rendre.
+
+Et pour les scénarios : **Heure de réveil demain** (premier cours moins
+l'avance réglée dans la configuration, 75 min par défaut), **Premier cours /
+Fin des cours demain**, **Pas de cours demain**, **Sport demain**, **Contrôle
+demain**, **Prochain contrôle**, **Matières de demain**, **Tendance de la
+moyenne** (30 jours, en points, depuis l'historique Jeedom).
+
+Exemples de scénarios :
+
+| Quand | Faire |
+|---|---|
+| Tous les jours à 19:30, si `Pas de cours demain` = 0 | TTS sur l'enceinte du salon : `#[Maison][Cléa][Briefing du soir (demain)]#` |
+| Tous les jours à 6:00 | Programmer le réveil de la chambre à `#[Maison][Cléa][Heure de réveil demain]#` (calculé la veille) |
+| Sur `Nouvelle note (événement)` = 1 | Notification : `#[Maison][Cléa][Dernier événement (texte)]#` |
+| Sur `Cours annulé demain` = 1 | Notification aux deux parents |
+| Sur `Sport demain` = 1, à 20:00 | TTS : « Tenue de sport à préparer » |
+| Dimanche 18:00 | Message : `#[Maison][Cléa][Bilan de la semaine (texte)]#` |
+| Sur `Moyenne en baisse (événement)` = 1 | Notification : `#[Maison][Cléa][Matières en baisse]#` |
+
+## Cocher un devoir « fait » depuis Jeedom
+
+Dans le panneau, chaque devoir a une case (administrateur, élève enrôlé).
+La cocher **écrit dans Pronote** — c'est le même coche que dans l'application
+— et rafraîchit les données de l'élève dans la foulée. Une connexion Pronote
+par clic : à utiliser à la main, pas dans un scénario en boucle.
+
+## Mode discret
+
+Dans la fiche de l'élève, « Mode discret » masque la moyenne et les matières en
+baisse sur les widgets (écran partagé dans le salon, visiteurs). Le panneau et
+les commandes restent complets.
+
 ## Panneau
 
 Configuration du plugin › Affichage › **Panneau « Pronote »** ajoute une page

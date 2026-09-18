@@ -124,7 +124,24 @@ $monday = strtotime('monday this week');
   .pnp .pnp-ical{font-size:12px;opacity:.75;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .pnp .pnp-ical code{font-size:11px;padding:3px 6px;border-radius:4px;background:var(--pn-soft);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
   .pnp .pnp-foot{font-size:11.5px;opacity:.55;margin-top:4px}
-  @media (max-width:800px){.pnp .pnp-week{--ph:36px}.pnp .pnp-week .ev i{display:none}}
+  .pnp .pnp-brief{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);gap:14px;margin:0 0 14px}
+  .pnp .pnp-brief .txt{font-size:14px;line-height:1.5}
+  .pnp .pnp-brief .txt p{margin:0 0 6px}
+  .pnp .pnp-brief .facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pnp .pnp-brief .fact{padding:8px 10px;border-radius:5px;background:var(--pn-soft);font-size:12px}
+  .pnp .pnp-brief .fact b{display:block;font-size:16px;font-weight:500}
+  .pnp .pnp-brief .fact.on{color:var(--pn-warn)}
+  .pnp .pnp-spark{display:block;width:100%;height:56px;margin:6px 0 2px}
+  .pnp .pnp-spark path{fill:none;stroke:var(--pn-accent);stroke-width:2}
+  .pnp .pnp-spark .area{fill:var(--pn-accent);opacity:.12;stroke:none}
+  .pnp .pnp-spark .cls{stroke:rgba(128,140,155,.6);stroke-dasharray:3 3}
+  .pnp .pnp-trend{font-size:12px;opacity:.7}
+  .pnp .pnp-trend b.up{color:var(--pn-ok)} .pnp .pnp-trend b.down{color:var(--pn-warn)}
+  .pnp ul.pronote-hw li .chk{grid-row:1/3;align-self:center;margin:0 4px 0 -2px;width:16px;height:16px;cursor:pointer}
+  .pnp ul.pronote-hw li.haschk{grid-template-columns:auto auto 1fr}
+  .pnp ul.pronote-hw li.haschk .t{grid-column:2/-1}
+  .pnp ul.pronote-hw li.busy{opacity:.5;pointer-events:none}
+  @media (max-width:800px){.pnp .pnp-week{--ph:36px}.pnp .pnp-week .ev i{display:none}.pnp .pnp-brief{grid-template-columns:1fr}}
 </style>
 
 <div class="pnp" id="pnp">
@@ -190,6 +207,41 @@ $monday = strtotime('monday this week');
       if ($h0 >= $h1) { $h0 = 8; $h1 = 18; }
       $hwByDate = array();
       foreach ($homework as $hw) { if (!empty($hw['date'])) { $hwByDate[$hw['date']][] = $hw; } }
+      /* Écriture dans Pronote possible seulement avec un jeton enregistré. */
+      $canWrite = ($eq->getConfiguration('credentials', '') !== '');
+      /* Courbe de la moyenne générale : historique Jeedom sur 90 jours. */
+      $spark = '';
+      $trend = $val($eq, 'avg_trend', '');
+      $avgCmd = $eq->getCmd(null, 'avg_general');
+      if (is_object($avgCmd)) {
+          try {
+              $rows = history::all($avgCmd->getId(), date('Y-m-d H:i:s', time() - 90 * 86400), date('Y-m-d H:i:s'));
+              $pts = array();
+              foreach ((is_array($rows) ? $rows : array()) as $r) { $v = $r->getValue(); if ($v !== null && $v !== '') { $pts[] = array(strtotime($r->getDatetime()), (float)$v); } }
+              if (count($pts) >= 2) {
+                  $minV = 20; $maxV = 0;
+                  foreach ($pts as $pt) { $minV = min($minV, $pt[1]); $maxV = max($maxV, $pt[1]); }
+                  $minV = max(0, floor($minV) - 1); $maxV = min(20, ceil($maxV) + 1);
+                  $t0 = $pts[0][0]; $t1 = max($pts[count($pts) - 1][0], $t0 + 1);
+                  $path = ''; $first = '';
+                  foreach ($pts as $i => $pt) {
+                      $x = round(4 + 292 * ($pt[0] - $t0) / ($t1 - $t0), 1);
+                      $y = round(4 + 44 * (1 - ($pt[1] - $minV) / max(0.1, $maxV - $minV)), 1);
+                      $path .= ($i ? ' L' : 'M') . $x . ' ' . $y;
+                      if ($i === 0) { $first = $x; }
+                  }
+                  $lastX = round(4 + 292, 1);
+                  $spark = '<svg class="pnp-spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true">'
+                         . '<path class="area" d="' . $path . ' L' . $lastX . ' 52 L' . $first . ' 52 Z"/>'
+                         . '<path d="' . $path . '"/>';
+                  if ($avgClass !== '') {
+                      $yc = round(4 + 44 * (1 - ((float)$avgClass - $minV) / max(0.1, $maxV - $minV)), 1);
+                      $spark .= '<path class="cls" d="M4 ' . $yc . ' L296 ' . $yc . '"/>';
+                  }
+                  $spark .= '</svg>';
+              }
+          } catch (Throwable $e) { $spark = ''; }
+      }
   ?>
   <div class="pnp-student<?php echo $k === 0 ? ' on' : ''; ?>" data-id="<?php echo $id; ?>">
     <?php if ($lastError !== '') { ?>
@@ -226,6 +278,26 @@ $monday = strtotime('monday this week');
       <?php if ((int)$val($eq, 'new_infos', 0)) echo '<span class="pnp-chip"><i class="fas fa-bullhorn"></i> ' . (int)$val($eq, 'new_infos', 0) . ' {{information(s) non lue(s)}}</span>'; ?>
       <?php if ((int)$val($eq, 'punishments', 0)) echo '<span class="pnp-chip bad"><i class="fas fa-gavel"></i> ' . (int)$val($eq, 'punishments', 0) . ' {{punition(s)}}</span>'; ?>
     </div>
+
+    <?php $be = (string)$val($eq, 'briefing_evening', ''); $bm = (string)$val($eq, 'briefing_morning', '');
+    if ($be !== '' || $bm !== '') { $evening = (int)date('G') >= 15; ?>
+    <div class="pnp-block">
+      <h3><i class="fas fa-comment-dots"></i> <?php echo $evening ? '{{Ce soir, pour demain}}' : '{{Ce matin}}'; ?>
+        <span class="r">{{commandes « Briefing du soir / du matin » — à lire par votre enceinte ou à envoyer sur un téléphone}}</span></h3>
+      <div class="pnp-brief">
+        <div class="txt">
+          <p><?php echo $h($evening ? ($be !== '' ? $be : $bm) : ($bm !== '' ? $bm : $be)); ?></p>
+          <?php $ws = (string)$val($eq, 'weekly_summary', ''); if ($ws !== '') { ?><p style="opacity:.7;font-size:13px"><?php echo $h($ws); ?></p><?php } ?>
+        </div>
+        <div class="facts">
+          <div class="fact"><b><?php echo $h($val($eq, 'wake_time_tomorrow', '') ?: '—'); ?></b>{{réveil demain}}</div>
+          <div class="fact"><b><?php echo $h($val($eq, 'first_course_tomorrow', '') ?: '—'); ?> → <?php echo $h($val($eq, 'last_course_tomorrow', '') ?: '—'); ?></b>{{cours demain}}</div>
+          <div class="fact<?php echo (int)$val($eq, 'sport_tomorrow', 0) ? ' on' : ''; ?>"><b><?php echo (int)$val($eq, 'sport_tomorrow', 0) ? '{{oui}}' : '{{non}}'; ?></b>{{sport demain}}</div>
+          <div class="fact<?php echo (int)$val($eq, 'test_tomorrow', 0) ? ' on' : ''; ?>"><b><?php $nt = (string)$val($eq, 'next_test', ''); echo $nt !== '' ? $h($nt) : '{{aucun}}'; ?></b>{{prochain contrôle}}</div>
+        </div>
+      </div>
+    </div>
+    <?php } ?>
 
     <div class="pnp-block">
       <h3><i class="far fa-calendar-alt"></i> {{Emploi du temps}}
@@ -293,7 +365,10 @@ $monday = strtotime('monday this week');
                 echo '<ul class="pronote-hw">';
                 foreach ($list as $hw) {
                     $urgent = (strtotime($date) - strtotime($today)) <= 86400 && empty($hw['done']);
-                    echo '<li class="' . (!empty($hw['done']) ? 'done' : ($urgent ? 'urgent' : '')) . '"><b>' . $h($hw['subject'] ?? '') . '</b><span class="d">' . (!empty($hw['done']) ? '✓ {{fait}}' : '') . '</span><span class="t">' . $h($hw['description'] ?? '') . '</span></li>';
+                    $hwId = isset($hw['id']) ? preg_replace('/[^A-Za-z0-9#_\-]/', '', (string)$hw['id']) : '';
+                    $chk = ($isAdmin && $hwId !== '' && $canWrite)
+                        ? '<input type="checkbox" class="chk pnp-hwchk" data-hw="' . $h($hwId) . '"' . (!empty($hw['done']) ? ' checked' : '') . ' title="{{Cocher ici le coche aussi dans Pronote}}" />' : '';
+                    echo '<li class="' . (!empty($hw['done']) ? 'done' : ($urgent ? 'urgent' : '')) . ($chk ? ' haschk' : '') . '">' . $chk . '<b>' . $h($hw['subject'] ?? '') . '</b><span class="d">' . (!empty($hw['done']) ? '✓ {{fait}}' : '') . '</span><span class="t">' . $h($hw['description'] ?? '') . '</span></li>';
                 }
                 echo '</ul>';
             }
@@ -302,6 +377,12 @@ $monday = strtotime('monday this week');
 
       <div class="pnp-block">
         <h3><i class="fas fa-chart-bar"></i> {{Moyennes par matière}}<span class="r"><?php echo $periodName !== '' ? $h($periodName) : ''; ?></span></h3>
+        <?php if ($spark !== '' || $trend !== '') { ?>
+          <?php echo $spark; ?>
+          <div class="pnp-trend">{{Moyenne générale sur 90 jours}}<?php if ($avgClass !== '') { ?> · {{pointillé : classe}}<?php } ?>
+            <?php if ($trend !== '') { $tv = (float)$trend; ?> · {{tendance 30 j :}} <b class="<?php echo $tv > 0 ? 'up' : ($tv < 0 ? 'down' : ''); ?>"><?php echo ($tv > 0 ? '+' : '') . $h(str_replace('.', ',', (string)$tv)); ?> pt</b><?php } ?>
+          </div>
+        <?php } ?>
         <?php if (!count($subjects)) { ?><div class="pnp-empty">{{Pas encore de moyenne : activer le bloc « Notes » et synchroniser.}}</div><?php } else { ?>
           <div class="pnp-subjects">
           <?php foreach ($subjects as $sj) {
@@ -425,6 +506,22 @@ $monday = strtotime('monday this week');
       var done = function () { b.innerHTML = '<i class="fas fa-check"></i> Copié'; setTimeout(function () { b.innerHTML = '<i class="fas fa-copy"></i> Copier'; }, 1500); };
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done); }
       else { var r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.target)); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); try { document.execCommand('copy'); done(); } catch (e) {} }
+    });
+  });
+
+  /* Cocher un devoir : écrit dans Pronote (une connexion), puis recharge */
+  root.querySelectorAll('.pnp-hwchk').forEach(function (chk) {
+    chk.addEventListener('change', function () {
+      var li = chk.closest('li'); var student = chk.closest('.pnp-student');
+      li.classList.add('busy');
+      var body = new URLSearchParams({ action: 'homework_done', id: student.dataset.id, homework: chk.dataset.hw, done: chk.checked ? 1 : 0 });
+      fetch('plugins/pronote/core/ajax/pronote.ajax.php', { method: 'POST', body: body, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (res) { if (res.state !== 'ok') throw new Error(res.result || 'erreur'); location.reload(); })
+        .catch(function (e) {
+          li.classList.remove('busy'); chk.checked = !chk.checked;
+          if (window.jeedomUtils && jeedomUtils.showAlert) jeedomUtils.showAlert({ message: e.message, level: 'danger' }); else alert(e.message);
+        });
     });
   });
 
