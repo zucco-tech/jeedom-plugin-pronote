@@ -21,6 +21,7 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
 Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
 [changelog.md](changelog.md) — licence : [GPL-3.0](LICENSE).
 Publication sur le Market Jeedom : [docs/dev/publier-sur-le-market.md](docs/dev/publier-sur-le-market.md).
+Comparaison avec ProJote : [docs/dev/comparaison-projote.md](docs/dev/comparaison-projote.md).
 
 ## Signaler un problème
 
