@@ -28,14 +28,19 @@ function pronote_update() {
                puis la surcharge par élève est effacée pour qu'un seul endroit
                fasse foi. */
             $changed = false;
-            foreach (array_keys(pronote::PLUGIN_SETTINGS) as $key) {
-                $own = $eqLogic->getConfiguration($key, null);
-                if ($own !== null && $own !== '') {
-                    if (config::byKey($key, 'pronote', '') === '') {
+            /* Migration faite UNE fois (drapeau settings_migrated). Avant, elle
+               tournait à chaque mise à jour et effaçait toute surcharge par
+               élève dès qu'une valeur existait au niveau du plugin : « une
+               commande par matière » cochée sur l'élève disparaissait, et ses
+               commandes avec. Une surcharge par élève est légitime : on la laisse. */
+            if (config::byKey('settings_migrated', 'pronote', 0) != 1) {
+                foreach (array_keys(pronote::PLUGIN_SETTINGS) as $key) {
+                    $own = $eqLogic->getConfiguration($key, null);
+                    if ($own !== null && $own !== '' && config::byKey($key, 'pronote', '') === '') {
                         config::save($key, $own, 'pronote');
+                        $eqLogic->setConfiguration($key, null);
+                        $changed = true;
                     }
-                    $eqLogic->setConfiguration($key, null);
-                    $changed = true;
                 }
             }
             $eqLogic->syncCommands();
@@ -46,6 +51,7 @@ function pronote_update() {
             log::add('pronote', 'error', 'Mise à jour de ' . $eqLogic->getHumanName() . ' : ' . $e->getMessage());
         }
     }
+    config::save('settings_migrated', 1, 'pronote');
 }
 
 function pronote_remove() {

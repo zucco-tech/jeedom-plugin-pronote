@@ -4,6 +4,16 @@
 Objectif : un plugin complet, sans démon, avec 4 connexions par jour et un
 agenda — et une maison qui parle.
 
+### Corrections
+- **La mise à jour effaçait la surcharge par élève « une commande de moyenne par
+  matière »** (et donc ses commandes) dès qu'une valeur existait au niveau du
+  plugin : la migration des réglages tournait à chaque mise à jour. Elle ne
+  tourne plus qu'une fois et laisse les surcharges par élève. Pour retrouver
+  les commandes par matière : recocher l'option (plugin ou élève) et synchroniser.
+- Choisir un agenda Jeedom dans la fiche projette immédiatement les données
+  déjà connues, sans attendre la synchronisation suivante ; le retirer reprend
+  ses événements.
+
 ### Agenda Jeedom (plugin Agenda officiel)
 - Chaque élève peut être **projeté dans un agenda du plugin Agenda** : journées
   d'école (du premier au dernier cours), chaque cours (couleur par matière,

@@ -1046,6 +1046,23 @@ class pronote extends eqLogic {
 
     public function postSave() {
         $this->syncCommands();
+        /* Agenda Jeedom choisi ou changé : projeter tout de suite avec les
+           données déjà connues, sans attendre la synchronisation suivante ;
+           agenda retiré : reprendre les événements. */
+        $agendaId = (int)$this->getConfiguration('calendar_id', 0);
+        $previous = (int)$this->getCache('agendaId', 0);
+        if ($agendaId !== $previous) {
+            $this->setCache('agendaId', $agendaId);
+            if ($agendaId > 0 && count($this->getData())) {
+                $this->pushToAgenda();
+            } elseif ($agendaId <= 0 && $previous > 0) {
+                try {
+                    pronote_agenda::purge($this);
+                } catch (Throwable $e) {
+                    log::add('pronote', 'warning', 'nettoyage de l\'agenda : ' . $e->getMessage());
+                }
+            }
+        }
     }
 
     public function preRemove() {

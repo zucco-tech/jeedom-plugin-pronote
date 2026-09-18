@@ -288,10 +288,13 @@ if (!pronote_agenda::available()) {
     $tpl->save();
     $eq->setConfiguration('calendar_id', $cal->getId());
     $eq->setConfiguration('calendar_homework', 1);
-    $eq->save(true);
+    $eq->save();                       // postSave() projette immédiatement
     $eq = eqLogic::byId($eq->getId());
+    $immediate = count(calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"'));
+    t('choisir l\'agenda dans la fiche projette sans attendre la synchro', $immediate > 20, $immediate . ' événements');
     $stats = $eq->pushToAgenda();
-    t('projection initiale : événements créés', is_array($stats) && $stats['created'] > 20 && $stats['removed'] === 0, json_encode($stats));
+    t('projection suivante : rien de nouveau', is_array($stats) && $stats['created'] === 0 && $stats['removed'] === 0, json_encode($stats));
+    $stats = array('created' => $immediate, 'updated' => 0, 'removed' => 0, 'kept' => 0, 'total' => $immediate);
     $mine = calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"');
     t('tous marqués élève + uid', count($mine) === $stats['total'] && array_reduce($mine, function ($c, $e) { return $c && $e->getCmd_param('pronote_uid', '') !== ''; }, true), count($mine) . ' événements');
     $kinds = array();
@@ -327,7 +330,9 @@ if (!pronote_agenda::available()) {
     $n = pronote_agenda::purge($eq);
     t('purge : plus aucun événement de l\'élève', $n > 0 && count(calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"')) === 0, $n . ' retirés');
     t('modèle toujours là', is_object(calendar_event::byId($tpl->getId())));
-    $eq->setConfiguration('calendar_id', ''); $eq->save(true);
+    $eq->setConfiguration('calendar_id', $cal->getId()); $eq->save();
+    $eq->setConfiguration('calendar_id', ''); $eq->save();   // agenda retiré -> événements repris
+    t('retirer l\'agenda de la fiche purge ses événements', count(calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"')) === 0);
     $cal->remove();
     t('agenda de test supprimé', !is_object(eqLogic::byLogicalId('__selftest_agenda', 'calendar')));
 }
@@ -359,6 +364,19 @@ config::save('sync_start', $sStart, 'pronote');
 config::save('sync_end', $sEnd, 'pronote');
 
 section('10. Régressions');
+/* 18/09/2026 : la migration des réglages tournait à chaque mise à jour et
+   effaçait la surcharge « une commande par matière » posée sur un élève dès
+   qu'une valeur (même 0) existait au niveau du plugin — les commandes par
+   matière disparaissaient. Elle ne tourne plus qu'une fois et respecte la surcharge. */
+$savedPS = config::byKey('per_subject', 'pronote', ''); $savedMig = config::byKey('settings_migrated', 'pronote', 0);
+config::save('per_subject', 0, 'pronote'); config::save('settings_migrated', 1, 'pronote');
+$eq->setConfiguration('per_subject', 1); $eq->save(true);
+require_once __DIR__ . '/../plugin_info/install.php';
+pronote_update();
+$eq = eqLogic::byId($eq->getId());
+t('mise à jour : la surcharge par élève « par matière » survit', $eq->getConfiguration('per_subject', '') == 1 && $eq->setting('per_subject') == 1);
+t('mise à jour : les commandes par matière survivent', is_object($eq->getCmd(null, 'avg_subject_mathematiques')));
+config::save('per_subject', $savedPS, 'pronote'); config::save('settings_migrated', $savedMig, 'pronote');
 /* La page ne doit pas dépendre de $plugin : Jeedom ne le définit que si l'URL
    porte le paramètre « m ». Bug remonté le 09/09/2026. */
 /* L'include partage la portée de l'appelant : on isole le rendu dans une
