@@ -120,6 +120,12 @@ La cocher **écrit dans Pronote** — c'est le même coche que dans l'applicatio
 — et rafraîchit les données de l'élève dans la foulée. Une connexion Pronote
 par clic : à utiliser à la main, pas dans un scénario en boucle.
 
+Certains établissements réservent cette case au **compte de l'élève** : depuis
+un compte Parents, Pronote refuse. Le plugin s'en souvient au premier refus,
+retire les cases du panneau et l'explique ; l'état « fait » coché par l'élève
+dans son application reste reflété à chaque synchronisation. Pour cocher
+depuis Jeedom, il faut alors enrôler l'élève avec son propre compte.
+
 ## Mode discret
 
 Dans la fiche de l'élève, « Mode discret » masque la moyenne et les matières en

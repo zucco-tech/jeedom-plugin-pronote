@@ -79,8 +79,16 @@ try {
         $payload = $eqLogic->synchronize(array('action' => array(
             'type' => 'homework_done', 'id' => $hwId, 'done' => (init('done', 1) == 1))));
         if (!isset($payload['ok']) || $payload['ok'] !== true) {
-            throw new Exception($payload['error']);
+            $err = (string)($payload['error'] ?? '');
+            /* Pronote refuse : l'établissement réserve la case « fait » au compte
+               de l'élève. On s'en souvient pour ne plus proposer les cases. */
+            if (preg_match('/refus|acc[eè]s|autoris|interdit|error from pronote/iu', $err)) {
+                $eqLogic->setCache('hwWriteDenied', 1);
+                throw new Exception(__('Pronote refuse : cet établissement réserve la case « fait » au compte de l\'élève. Les cases sont retirées du panneau.', __FILE__));
+            }
+            throw new Exception($err);
         }
+        $eqLogic->setCache('hwWriteDenied', 0);
         ajax::success(array('done' => (init('done', 1) == 1)));
     }
 

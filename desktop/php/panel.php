@@ -207,8 +207,10 @@ $monday = strtotime('monday this week');
       if ($h0 >= $h1) { $h0 = 8; $h1 = 18; }
       $hwByDate = array();
       foreach ($homework as $hw) { if (!empty($hw['date'])) { $hwByDate[$hw['date']][] = $hw; } }
-      /* Écriture dans Pronote possible seulement avec un jeton enregistré. */
-      $canWrite = ($eq->getConfiguration('credentials', '') !== '');
+      /* Écriture dans Pronote : jeton enregistré, et pas de refus mémorisé
+         (certains établissements réservent la case « fait » au compte élève). */
+      $hwDenied = ((int)$eq->getCache('hwWriteDenied', 0) === 1);
+      $canWrite = ($eq->getConfiguration('credentials', '') !== '') && !$hwDenied;
       /* Courbe de la moyenne générale : historique Jeedom sur 90 jours. */
       $spark = '';
       $trend = $val($eq, 'avg_trend', '');
@@ -355,6 +357,7 @@ $monday = strtotime('monday this week');
     <div class="pnp-grid2">
       <div class="pnp-block">
         <h3><i class="fas fa-pen"></i> {{Devoirs}} <span class="r"><?php echo count($homework) ? count($homework) . ' {{sur 14 jours}}' : ''; ?></span></h3>
+        <?php if ($hwDenied) { ?><div class="pnp-foot" style="margin:0 0 8px">{{Cet établissement réserve la case « fait » au compte de l'élève : elle se coche depuis son application Pronote, et Jeedom la reflète à la synchronisation suivante.}}</div><?php } ?>
         <?php if (!count($homework)) { ?><div class="pnp-empty">{{Aucun devoir à venir.}}</div><?php } else {
             ksort($hwByDate);
             foreach ($hwByDate as $date => $list) {

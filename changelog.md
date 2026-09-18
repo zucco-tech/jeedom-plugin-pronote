@@ -5,6 +5,9 @@ Objectif : un plugin complet, sans démon, avec 4 connexions par jour et un
 agenda — et une maison qui parle.
 
 ### Corrections
+- Devoir « fait » depuis Jeedom : quand l'établissement réserve la case au
+  compte de l'élève (refus sur un compte Parents), le refus est mémorisé, les
+  cases disparaissent du panneau et un message l'explique.
 - **La mise à jour effaçait la surcharge par élève « une commande de moyenne par
   matière »** (et donc ses commandes) dès qu'une valeur existait au niveau du
   plugin : la migration des réglages tournait à chaque mise à jour. Elle ne

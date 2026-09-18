@@ -246,6 +246,13 @@ t('panneau : élève, semaine, devoirs, matières', $ok && strpos($panel, 'AUTOT
 t('panneau : cours placés dans la grille', $ok && preg_match_all('/class="ev/', $panel) > 5);
 t('panneau : carte briefing et faits de demain', $ok && strpos($panel, 'pnp-brief') !== false && strpos($panel, 'réveil demain') !== false);
 t('panneau : pas de case « fait » sans jeton (écriture impossible)', $ok && strpos($panel, 'class="chk pnp-hwchk"') === false);
+$eq->setConfiguration('credentials', 'enc:fake'); $eq->save(true);
+list($ok, $panel) = $renderPanel();
+t('panneau : cases « fait » avec un jeton', $ok && strpos($panel, 'class="chk pnp-hwchk"') !== false);
+$eq->setCache('hwWriteDenied', 1);
+list($ok, $panel) = $renderPanel();
+t('panneau : refus mémorisé de Pronote -> cases retirées, explication affichée', $ok && strpos($panel, 'class="chk pnp-hwchk"') === false && strpos($panel, 'réserve la case') !== false);
+$eq->setCache('hwWriteDenied', 0); $eq->setConfiguration('credentials', ''); $eq->save(true);
 $eq->setConfiguration('hide_grades', 1); $eq->save(true);
 $discret = $eq->toHtml('dashboard');
 t('mode discret : moyenne masquée sur le widget', strpos($discret, '•••') !== false && strpos($discret, '14,7') === false);
