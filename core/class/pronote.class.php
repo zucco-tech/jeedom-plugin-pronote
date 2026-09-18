@@ -9,6 +9,7 @@
  */
 
 require_once __DIR__ . '/../../../../core/php/core.inc.php';
+require_once __DIR__ . '/pronote_agenda.class.php';
 
 class pronote extends eqLogic {
 
@@ -376,6 +377,15 @@ class pronote extends eqLogic {
                 $return[] = array(
                     'test' => $eqLogic->getName() . __(' — utilisé par', __FILE__),
                     'result' => implode(', ', $lecteurs),
+                    'advice' => '',
+                    'state' => true,
+                );
+            }
+            $agenda = pronote_agenda::summary($eqLogic);
+            if ($agenda !== '') {
+                $return[] = array(
+                    'test' => $eqLogic->getName() . __(' — agenda Jeedom', __FILE__),
+                    'result' => $agenda,
                     'advice' => '',
                     'state' => true,
                 );
@@ -833,6 +843,20 @@ class pronote extends eqLogic {
                 }
             }
         }
+
+        if (isset($data['_lessons']) || isset($data['_homework']) || isset($data['_holidays'])) {
+            $this->pushToAgenda();
+        }
+    }
+
+    /** Projection dans l'agenda Jeedom (plugin Agenda), si l'élève en a choisi un. */
+    public function pushToAgenda() {
+        try {
+            return pronote_agenda::sync($this);
+        } catch (Throwable $e) {
+            log::add('pronote', 'warning', $this->getHumanName() . ' : projection dans l\'agenda impossible — ' . $e->getMessage());
+            return null;
+        }
     }
 
     /** Commande par matière, créée si absente (réglages utilisateur conservés). */
@@ -1025,6 +1049,11 @@ class pronote extends eqLogic {
     }
 
     public function preRemove() {
+        try {
+            pronote_agenda::purge($this);
+        } catch (Throwable $e) {
+            log::add('pronote', 'warning', 'nettoyage de l\'agenda : ' . $e->getMessage());
+        }
         @unlink($this->dataFile());
         @unlink($this->photoFile());
     }

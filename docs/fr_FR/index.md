@@ -86,6 +86,33 @@ Exemples de scénarios :
 | Dimanche 18:00 | Message : `#[Maison][Cléa][Bilan de la semaine (texte)]#` |
 | Sur `Moyenne en baisse (événement)` = 1 | Notification : `#[Maison][Cléa][Matières en baisse]#` |
 
+## Agenda Jeedom
+
+Si le plugin **Agenda** (officiel, gratuit) est installé, la fiche de l'élève
+propose « Agenda Jeedom ». Choisissez un agenda : à chaque synchronisation, le
+plugin y projette les **journées d'école** (du premier au dernier cours),
+**chaque cours** (couleur par matière, annulés en transparent), les
+**devoirs** (option) et les **vacances**. Ce qui change dans Pronote change
+dans l'agenda ; vos propres événements ne sont jamais touchés ; supprimer
+l'élève retire ses événements.
+
+L'intérêt, au-delà de l'affichage (widget Agenda, Designs, mobile) : l'Agenda
+sait exécuter des actions **au début et à la fin d'un événement**. Pour ne pas
+les régler à la main sur chaque cours, utilisez un **modèle** : créez dans
+l'agenda un événement (n'importe quelle date passée) nommé
+
+- `Modèle Pronote : journée` — ex. début : « départ au lycée » (éteindre le
+  chauffage de la chambre), fin : « retour » (rallumer) ;
+- `Modèle Pronote : cours` — appliqué à chaque cours ;
+- `Modèle Pronote : EPS` (ou toute matière) — ex. la veille, on préfère le
+  scénario « Sport demain » ; au début du cours, rien ; à vous ;
+- `Modèle Pronote : devoir`, `Modèle Pronote : vacances` — ex. début des
+  vacances : mode « maison en vacances ».
+
+Chaque nouvel événement du même genre reçoit les actions, l'icône et la couleur
+du modèle. Les actions d'un événement déjà créé ne sont jamais réécrites : ce
+que vous ajustez reste.
+
 ## Cocher un devoir « fait » depuis Jeedom
 
 Dans le panneau, chaque devoir a une case (administrateur, élève enrôlé).

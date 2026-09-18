@@ -425,6 +425,30 @@ $pronotepyVersion = ($dep['state'] === 'ok') ? pronote::pronotepyVersion() : '';
                 </div>
               </div>
 
+              <?php $agendas = pronote_agenda::agendas(); if (pronote_agenda::available()) { ?>
+              <div class="pn-sec">
+                <h4><i class="far fa-calendar-check"></i> {{Agenda Jeedom}}</h4>
+                <div style="font-size:12.5px;opacity:.8">
+                  {{Les cours, journées d'école, devoirs et vacances de l'élève sont projetés dans l'agenda choisi à chaque synchronisation — créés, mis à jour, retirés. Vos propres événements ne sont jamais touchés.}}
+                  <div class="form-group" style="margin:10px 0 6px">
+                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="calendar_id" style="max-width:360px">
+                      <option value="">{{— aucun agenda —}}</option>
+                      <?php foreach ($agendas as $cid => $cname) { echo '<option value="' . (int)$cid . '">' . htmlspecialchars($cname) . '</option>'; } ?>
+                    </select>
+                    <?php if (!count($agendas)) { ?><span class="help-block">{{Créer d'abord un agenda dans le plugin Agenda.}}</span><?php } ?>
+                  </div>
+                  <div style="display:flex;gap:14px;flex-wrap:wrap">
+                    <label class="checkbox-inline" style="margin:0"><input type="checkbox" class="eqLogicAttr pn-agenda-opt" data-l1key="configuration" data-l2key="calendar_day" /> {{Journées d'école}}</label>
+                    <label class="checkbox-inline" style="margin:0"><input type="checkbox" class="eqLogicAttr pn-agenda-opt" data-l1key="configuration" data-l2key="calendar_lessons" /> {{Chaque cours}}</label>
+                    <label class="checkbox-inline" style="margin:0"><input type="checkbox" class="eqLogicAttr pn-agenda-opt" data-l1key="configuration" data-l2key="calendar_homework" /> {{Devoirs}}</label>
+                    <label class="checkbox-inline" style="margin:0"><input type="checkbox" class="eqLogicAttr pn-agenda-opt" data-l1key="configuration" data-l2key="calendar_holidays" /> {{Vacances}}</label>
+                  </div>
+                  <span class="help-block" style="margin-top:8px">{{Modèles : créez dans cet agenda un événement nommé « Modèle Pronote : journée », « Modèle Pronote : cours », « Modèle Pronote : EPS » (ou toute matière), « Modèle Pronote : devoir » ou « Modèle Pronote : vacances » avec les actions de début et de fin que vous voulez. Chaque nouvel événement du même genre les reçoit — l'Agenda les exécute ensuite tout seul (départ au lycée, retour, tenue de sport…). Les actions d'un événement déjà créé ne sont jamais réécrites.}}</span>
+                  <div id="pn_agenda_state" class="help-block" style="margin-top:6px"></div>
+                </div>
+              </div>
+              <?php } ?>
+
               <div class="pn-sec pn-ical">
                 <h4><i class="fas fa-calendar-plus"></i> {{Agenda (iCal)}}</h4>
                 <div style="font-size:12.5px;opacity:.8">

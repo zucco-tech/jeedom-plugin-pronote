@@ -267,6 +267,71 @@ t('source forcée « zone » : calendrier de Pronote ignoré', $eq->holidayRange
 $eq->setConfiguration('holiday_source', ''); $eq->save(true);
 config::save('suspend_holidays', $savedSusp, 'pronote');
 
+section('8 quater. Agenda Jeedom (plugin Agenda)');
+if (!pronote_agenda::available()) {
+    echo "  (plugin Agenda absent ou inactif : section sautée)\n";
+} else {
+    $oldCal = eqLogic::byLogicalId('__selftest_agenda', 'calendar');
+    if (is_object($oldCal)) { $oldCal->remove(); }
+    $cal = new calendar();
+    $cal->setName('AUTOTEST agenda'); $cal->setLogicalId('__selftest_agenda'); $cal->setEqType_name('calendar'); $cal->setIsEnable(1);
+    $cal->save();
+    t('agenda de test créé', is_object(eqLogic::byId($cal->getId())));
+    /* Modèle : un événement passé nommé « Modèle Pronote : cours » avec une action inoffensive et une icône. */
+    $tpl = new calendar_event();
+    $tpl->setEqLogic_id($cal->getId());
+    $tpl->setStartDate('2020-01-06 08:00:00'); $tpl->setEndDate('2020-01-06 09:00:00');
+    $tpl->setCmd_param('eventName', 'Modèle Pronote : cours');
+    $tpl->setCmd_param('icon', '<i class="fas fa-book"></i>');
+    $tpl->setCmd_param('start', array(array('cmd' => 'sleep', 'options' => array('duration' => 0))));
+    $tpl->setRepeat('enable', 0);
+    $tpl->save();
+    $eq->setConfiguration('calendar_id', $cal->getId());
+    $eq->setConfiguration('calendar_homework', 1);
+    $eq->save(true);
+    $eq = eqLogic::byId($eq->getId());
+    $stats = $eq->pushToAgenda();
+    t('projection initiale : événements créés', is_array($stats) && $stats['created'] > 20 && $stats['removed'] === 0, json_encode($stats));
+    $mine = calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"');
+    t('tous marqués élève + uid', count($mine) === $stats['total'] && array_reduce($mine, function ($c, $e) { return $c && $e->getCmd_param('pronote_uid', '') !== ''; }, true), count($mine) . ' événements');
+    $kinds = array();
+    foreach ($mine as $e) { $kinds[$e->getCmd_param('pronote_kind')] = ($kinds[$e->getCmd_param('pronote_kind')] ?? 0) + 1; }
+    t('journées, cours, devoirs, vacances présents', isset($kinds['day'], $kinds['lesson'], $kinds['homework'], $kinds['holiday']), json_encode($kinds));
+    $lesson = null; $cancelled = null; $day = null;
+    foreach ($mine as $e) {
+        if ($e->getCmd_param('pronote_kind') === 'lesson' && $e->getCmd_param('transparent', 0) == 1) { $cancelled = $e; }
+        elseif ($e->getCmd_param('pronote_kind') === 'lesson' && $lesson === null) { $lesson = $e; }
+        if ($e->getCmd_param('pronote_kind') === 'day') { $day = $e; }
+    }
+    t('le modèle « cours » a fourni action et icône', is_object($lesson) && is_array($lesson->getCmd_param('start')) && count($lesson->getCmd_param('start')) === 1 && strpos((string)$lesson->getCmd_param('icon'), 'fa-book') !== false);
+    t('cours annulé = transparent et nommé « Annulé »', is_object($cancelled) && strpos((string)$cancelled->getCmd_param('eventName'), 'Annulé') === 0);
+    t('journée d\'école = du premier au dernier cours', is_object($day) && strtotime($day->getEndDate()) - strtotime($day->getStartDate()) >= 4 * 3600, is_object($day) ? $day->getStartDate() . ' → ' . $day->getEndDate() : 'absente');
+    t('le modèle lui-même n\'est pas touché', is_object(calendar_event::byId($tpl->getId())) && calendar_event::byId($tpl->getId())->getCmd_param('pronote_uid', '') === '');
+    $again = $eq->pushToAgenda();
+    t('seconde projection identique : rien créé, rien retiré', is_array($again) && $again['created'] === 0 && $again['removed'] === 0 && $again['kept'] === $stats['total'], json_encode($again));
+    /* L'utilisateur modifie l'action d'un événement : conservée à la mise à jour suivante. */
+    $lesson->setCmd_param('start', array(array('cmd' => 'sleep', 'options' => array('duration' => 1)), array('cmd' => 'sleep', 'options' => array('duration' => 2))));
+    $lesson->save();
+    $store = $eq->getData();
+    $store['_lessons'] = array_slice($store['_lessons'], 0, count($store['_lessons']) - 1); // Pronote a retiré un cours
+    pronote::writePrivate($eq->dataFile(), json_encode($store));
+    $third = $eq->pushToAgenda();
+    t('cours retiré de Pronote -> retiré de l\'agenda (le reste conservé)', is_array($third) && $third['removed'] >= 1 && $third['created'] === 0, json_encode($third));
+    $l2 = calendar_event::byId($lesson->getId());
+    t('les actions réglées par l\'utilisateur survivent', is_object($l2) && count($l2->getCmd_param('start')) === 2);
+    t('résumé pour Santé et fiche', strpos(pronote_agenda::summary($eq), 'événement') !== false, pronote_agenda::summary($eq));
+    $h = pronote::health(); $ligne = null;
+    foreach ($h as $x) { if (strpos($x['test'], 'agenda Jeedom') !== false) { $ligne = $x; } }
+    t('ligne « agenda Jeedom » dans Santé', $ligne !== null);
+    /* Nettoyage : la suppression de l'élève retire ses événements, pas le modèle. */
+    $n = pronote_agenda::purge($eq);
+    t('purge : plus aucun événement de l\'élève', $n > 0 && count(calendar_event::searchByCmd_param('"pronote_student":"' . $eq->getId() . '"')) === 0, $n . ' retirés');
+    t('modèle toujours là', is_object(calendar_event::byId($tpl->getId())));
+    $eq->setConfiguration('calendar_id', ''); $eq->save(true);
+    $cal->remove();
+    t('agenda de test supprimé', !is_object(eqLogic::byLogicalId('__selftest_agenda', 'calendar')));
+}
+
 section('9. Plage horaire (dont passage de minuit)');
 $sStart = config::byKey('sync_start', 'pronote', '06:00');
 $sEnd   = config::byKey('sync_end', 'pronote', '20:00');

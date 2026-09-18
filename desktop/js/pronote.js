@@ -74,6 +74,20 @@ function pronoteRefreshToken(_eqLogic) {
       }
     }
   }
+  /* Agenda Jeedom : cases cochées par défaut tant que rien n'a été enregistré. */
+  document.querySelectorAll('.pn-agenda-opt').forEach(function (chk) {
+    const key = chk.dataset.l2key
+    if (conf[key] === undefined || conf[key] === null || conf[key] === '') {
+      chk.checked = (key !== 'calendar_homework')
+    }
+  })
+  const agendaState = document.getElementById('pn_agenda_state')
+  if (agendaState) {
+    const st = cache.agendaStats ? (function () { try { return JSON.parse(cache.agendaStats) } catch (e) { return null } })() : null
+    agendaState.textContent = st && st.total !== undefined
+      ? '{{Dernière projection}} : ' + st.total + ' {{événement(s) dans}} « ' + (st.agenda || '') + ' » — ' + st.created + ' {{créés}}, ' + st.updated + ' {{mis à jour}}, ' + st.removed + ' {{retirés}}'
+      : (conf.calendar_id ? '{{Projection à la prochaine synchronisation.}}' : '')
+  }
   const sub = document.getElementById('pn_sub')
   if (sub) {
     const parts = [conf.student_class, conf.establishment].filter(Boolean)

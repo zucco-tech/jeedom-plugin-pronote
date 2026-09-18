@@ -21,6 +21,9 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
 - **La maison qui parle** : briefings du soir et du matin en français (TTS,
   notifications), heure de réveil, sport / contrôle demain, dernier événement,
   bilan hebdo. **Cocher un devoir « fait » depuis Jeedom écrit dans Pronote.**
+- **Agenda Jeedom** : journées d'école, cours, devoirs et vacances projetés
+  dans le plugin Agenda, avec des **modèles** qui donnent à chaque événement ses
+  actions de début et de fin.
 - **Panneau** multi-élèves (semaine sur deux semaines, devoirs, moyennes par
   matière, vie scolaire, messagerie, cantine) et **abonnement agenda iCal**.
 - Période en cours, prochaines vacances, matières en baisse, photo de profil

@@ -4,6 +4,24 @@
 Objectif : un plugin complet, sans démon, avec 4 connexions par jour et un
 agenda — et une maison qui parle.
 
+### Agenda Jeedom (plugin Agenda officiel)
+- Chaque élève peut être **projeté dans un agenda du plugin Agenda** : journées
+  d'école (du premier au dernier cours), chaque cours (couleur par matière,
+  annulés en transparent), devoirs (option) et vacances de l'établissement.
+  Créés, mis à jour et retirés à chaque synchronisation ; les événements créés
+  à la main ne sont jamais touchés (marquage `pronote_student` / `pronote_uid`
+  dans l'événement).
+- **Modèles** : un événement de l'agenda nommé « Modèle Pronote : journée »,
+  « … : cours », « … : EPS » (ou toute matière), « … : devoir », « … : vacances »
+  prête ses actions de début et de fin, son icône et sa couleur à chaque
+  nouvel événement du même genre — l'Agenda les exécute ensuite tout seul
+  (départ au lycée, retour, tenue de sport, mode vacances). Les actions d'un
+  événement déjà créé ne sont jamais réécrites.
+- Le passé reste dans l'agenda (90 jours), l'avenir suit Pronote. Suppression
+  de l'élève = retrait de ses événements. Ligne dans Santé et résumé dans la
+  fiche. Le plugin Agenda n'est pas une dépendance : sans lui, l'option
+  n'apparaît pas.
+
 ### La maison qui parle
 - **Briefing du soir** et **du matin** en français naturel, prêts pour une
   synthèse vocale ou une notification : heures de début et de fin, premier
