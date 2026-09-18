@@ -32,6 +32,8 @@ Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
 [changelog.md](changelog.md) — licence : [propriétaire](LICENSE) (tous droits réservés, zucco-tech).
 Publication sur le Market Jeedom : [docs/dev/publier-sur-le-market.md](docs/dev/publier-sur-le-market.md).
 Sécurité : [SECURITY.md](SECURITY.md).
+Maquette navigable des évolutions 1.1 : [docs/mockups/evolutions-1.1.html](docs/mockups/evolutions-1.1.html)
+(à ouvrir dans un navigateur — panneau, briefings vocaux, devoirs cochés, widgets, fiche, configuration, scénarios).
 
 ## Licence
 
