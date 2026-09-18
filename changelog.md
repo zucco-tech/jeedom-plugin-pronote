@@ -1,10 +1,10 @@
 # Changelog
 
 ## 1.1.0-beta.1
-Objectif : dépasser ce qu'offre ProJote tout en gardant ce qui fait la
-différence (aucun démon, 4 connexions par jour, agenda).
+Objectif : un plugin complet, sans démon, avec 4 connexions par jour et un
+agenda — et une maison qui parle.
 
-### La maison qui parle (ce que ProJote ne fait pas)
+### La maison qui parle
 - **Briefing du soir** et **du matin** en français naturel, prêts pour une
   synthèse vocale ou une notification : heures de début et de fin, premier
   cours, cours annulés, contrôles, sport (tenue), devoirs non faits, cantine ;
