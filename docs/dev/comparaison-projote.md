@@ -44,7 +44,7 @@ journée sous forme d'agenda.
 | **Inter-plugins** | — | `readersOf()` : affiche quels plugins utilisent un élève (busscolaires) |
 | **Compatibilité annoncée** | Smart, Luna, Atlas, RPi, Docker, DIY ; Python 3.9 géré | Debian 11+, testé DIY/LXC uniquement |
 | **Documentation** | Site GitHub Pages, FAQ, 6 exemples de scénarios | `docs/fr_FR/index.md`, README, tutoriel Market |
-| **Licence** | AGPL v3 | GPL-3.0 |
+| **Licence** | AGPL v3 | Propriétaire depuis 1.1.0 (GPL-3.0 avant) |
 
 ## Ce que ProJote fait mieux
 

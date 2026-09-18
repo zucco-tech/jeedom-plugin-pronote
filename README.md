@@ -26,9 +26,17 @@ et menus d'un ou plusieurs enfants, depuis Pronote (via `pronotepy`).
   sécurité : [SECURITY.md](SECURITY.md).
 
 Documentation : [docs/fr_FR/index.md](docs/fr_FR/index.md) — historique :
-[changelog.md](changelog.md) — licence : [GPL-3.0](LICENSE).
+[changelog.md](changelog.md) — licence : [propriétaire](LICENSE) (tous droits réservés, zucco-tech).
 Publication sur le Market Jeedom : [docs/dev/publier-sur-le-market.md](docs/dev/publier-sur-le-market.md).
 Comparaison avec ProJote : [docs/dev/comparaison-projote.md](docs/dev/comparaison-projote.md) — sécurité : [SECURITY.md](SECURITY.md).
+
+## Licence
+
+Depuis le 18/09/2026 le plugin est sous **licence propriétaire** ([LICENSE](LICENSE)) :
+usage sur ses propres installations Jeedom, pas de redistribution ni de
+modification diffusée. Les versions publiées avant cette date restent sous
+GPL-3.0. Les bibliothèques tierces (pronotepy, requests, zxing-cpp, Pillow)
+gardent leurs licences libres.
 
 ## Signaler un problème
 

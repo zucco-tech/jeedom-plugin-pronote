@@ -1,7 +1,13 @@
 # Publier le plugin sur le Market Jeedom
 
 Tutoriel pas à pas, écrit pour ce dépôt. Le Market est gratuit pour un plugin
-gratuit ; aucun contrat n'est nécessaire. Ce qui prend du temps, c'est la
+gratuit ; un plugin **payant** passe par les CGU Développeur du Market (déjà
+acceptées sur ton profil) — Jeedom encaisse et reverse, le prix se règle sur la
+fiche. Le dépôt GitHub peut être **privé** : le Market le lit avec le jeton que
+tu lui donnes et livre lui-même le zip aux acheteurs ; ta propre prod, installée
+« depuis GitHub », se met à jour avec un jeton GitHub renseigné dans Jeedom
+(Réglages › Système › Configuration › Mises à jour/Market › GitHub › token, ou
+dans la fiche du plugin). Ce qui prend du temps, c'est la
 validation du compte développeur par l'équipe Jeedom, pas la technique.
 
 > Source : [doc.jeedom.com › Publication d'un plugin](https://doc.jeedom.com/fr_FR/dev/publication_plugin)
@@ -33,7 +39,7 @@ d'autres utilisateurs l'auront fait tourner, **Stable**.
 | Icône `plugin_info/pronote_icon.png` (128 × 128, PNG) | ✅ |
 | Documentation utilisateur `docs/fr_FR/index.md` | ✅ |
 | `changelog.md` | ✅ |
-| Licence libre (`LICENSE`, GPL-3.0) | ✅ |
+| Licence déclarée (`LICENSE`, propriétaire) | ✅ — un plugin payant demande le contrat développeur Jeedom (Market › CGU Développeur, déjà acceptées) |
 | Branche `beta` (ce que le Market lira) | ✅ créée depuis `main` |
 | Branche `stable` | ⏳ plus tard |
 | Captures d'écran pour la fiche Market | ⏳ **à faire par toi** (voir plus bas) |
@@ -80,7 +86,7 @@ Tags : python, dependance_install, cron, beta, gratuit
 
 Bonjour,
 
-Je présente **Pronote** (id : `pronote`), plugin **gratuit** en **bêta**.
+Je présente **Pronote** (id : `pronote`), plugin en **bêta** (gratuit pendant la bêta, payant ensuite).
 
 **Ce qu'il fait** : remonte dans Jeedom, pour un ou plusieurs enfants, les notes
 et moyennes, les devoirs (avec échéance), l'emploi du temps sur 7 jours (cours
@@ -100,7 +106,7 @@ qui rejoue le protocole du client web ; une mise à jour de Pronote côté
 recommandé. C'est pourquoi le plugin sort en bêta : une seule installation
 testée à ce jour (Jeedom 4.6, Debian 13, compte Parents).
 
-**Dépôt** : https://github.com/zucco-tech/jeedom-plugin-pronote (GPL-3.0)
+**Dépôt** : https://github.com/zucco-tech/jeedom-plugin-pronote (privé, licence propriétaire — accès lecture fourni au Market)
 **Documentation** : https://github.com/zucco-tech/jeedom-plugin-pronote/blob/main/docs/fr_FR/index.md
 
 Retours bienvenus, en particulier de parents dont l'établissement impose l'ENT.

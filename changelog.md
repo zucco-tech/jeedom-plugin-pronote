@@ -64,6 +64,11 @@ différence (aucun démon, 4 connexions par jour, agenda).
   d'action inconnue ne reflète plus l'entrée.
 - `SECURITY.md` : modèle de menace et décisions.
 
+### Licence
+- Passage en **licence propriétaire** (tous droits réservés, zucco-tech) à
+  partir de cette version ; les versions antérieures restent GPL-3.0.
+  `info.json` : `licence` = « Propriétaire ». Bibliothèques tierces inchangées.
+
 ### Compatibilité et qualité
 - `pronotepy >= 2.15.6` (serveurs PRONOTE 2026), Python 3.9 à 3.13 (Debian 11+).
 - Intégration continue GitHub : lint PHP 8.1/8.4, script Python sur 3.9/3.11/3.13
